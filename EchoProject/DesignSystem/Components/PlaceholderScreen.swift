@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// Stand-in for a screen that is not built yet. Every Route shows one of these
-/// until its owner replaces it, so the shell is clickable from day 1.
+/// Temporary stand-in for a screen that has not been built yet.
+///
+/// Every route shows one until its real screen is implemented, so the app can be
+/// navigated end to end from the start. Delete once no route uses it.
 struct PlaceholderScreen: View {
     let title: String
     let owner: String
@@ -10,21 +12,21 @@ struct PlaceholderScreen: View {
     var body: some View {
         VStack(spacing: 12) {
             Text(title)
-                .font(EchoFont.title1)
-                .foregroundStyle(EchoColor.ink)
+                .echoFont(.title, .bold)
+                .foregroundStyle(EchoColor.textPrimary)
             Text("Owner: \(owner)")
-                .font(EchoFont.subhead)
-                .foregroundStyle(EchoColor.ink.opacity(0.7))
+                .echoFont(.supporting)
+                .foregroundStyle(EchoColor.textSecondary)
             if let note {
                 Text(note)
-                    .font(EchoFont.caption)
-                    .foregroundStyle(EchoColor.ink.opacity(0.6))
+                    .echoFont(.caption)
+                    .foregroundStyle(EchoColor.textSecondary)
                     .multilineTextAlignment(.center)
             }
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(EchoColor.background)
+        .echoScreenBackground()
         .navigationTitle(title)
     }
 }

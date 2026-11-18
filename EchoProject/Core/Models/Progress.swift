@@ -6,7 +6,8 @@ enum Outcome: String, Codable, Hashable, CaseIterable {
     case almostThere
     case keepPractising
 
-    /// Proposed thresholds: 80% and above, 50–79%, under 50%. Confirm with your guide.
+    /// Maps a score to a completion screen: 80% and above, 50–79%, under 50%.
+    /// Thresholds live here, in one place, so they can be tuned without touching any screen.
     static func from(correct: Int, total: Int) -> Outcome {
         guard total > 0 else { return .keepPractising }
         let ratio = Double(correct) / Double(total)

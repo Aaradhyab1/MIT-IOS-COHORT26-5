@@ -29,7 +29,7 @@ protocol RecordingService: AnyObject {
 
 @MainActor
 final class DummyRecordingService: RecordingService {
-    /// Switched from the hidden debug menu (Dev C builds it).
+    /// Set from a hidden debug menu so a demo can show every recording state.
     var scenario: RecordingScenario = .normal
 
     private(set) var isRecording = false

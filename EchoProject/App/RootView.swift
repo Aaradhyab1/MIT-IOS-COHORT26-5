@@ -11,10 +11,11 @@ struct RootView: View {
             MainTabView()
         } else {
             NavigationStack(path: $router.onboardingPath) {
-                // TODO(Dev A, Thu 19 Nov): replace with SplashView.
-                PlaceholderScreen(title: "Splash", owner: "Dev A", note: "Elephant logo, 3 keyframes")
+                // TODO: Replace with SplashView.
+                PlaceholderScreen(title: "Splash", note: "Elephant logo animation")
                     .toolbar {
-                        // Dev-only shortcut until onboarding screens exist. Remove on Thu 19 Nov.
+                        // Development shortcut while the onboarding screens are being built.
+                        // Remove once SplashView navigates to the child profile.
                         Button("Skip to Home") { router.finishOnboarding() }
                     }
                     .navigationDestination(for: Route.self) { route in

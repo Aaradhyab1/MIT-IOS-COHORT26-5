@@ -8,8 +8,8 @@ enum ExerciseType: String, Codable, Hashable, CaseIterable {
     case oddOneOut          // Differentiation: which one sounds different / same or different
     case pictureChoice      // Identification: hear a word, pick 1 of 4 pictures
     case storyPlayer        // Comprehension: story pages, then picture questions
-    case ordering           // Comprehension: no template yet (first on the cut list)
-    case matching           // Comprehension: no template yet (first on the cut list)
+    case ordering           // Comprehension: put story events in order (template not built yet)
+    case matching           // Comprehension: match sounds to pictures (template not built yet)
 
     // Speaking
     case listenAndRecord    // Sounds and Words: listen to the model, record, repeat

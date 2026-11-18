@@ -1,6 +1,6 @@
 import Foundation
 
-/// Hardcoded sample data for the clickable build. Owner: Dev D.
+/// Hardcoded sample data for the clickable build (no database or backend yet).
 ///
 /// Rules:
 /// - Only repositories read `DummyData`. Views and ViewModels never do

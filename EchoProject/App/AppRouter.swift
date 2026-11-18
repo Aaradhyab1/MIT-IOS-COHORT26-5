@@ -7,7 +7,7 @@ enum AppTab: Hashable {
     case progress
 }
 
-/// Single source of truth for navigation. Owner: Dev A.
+/// Single source of truth for navigation.
 ///
 /// ViewModels call `router.go(.exercise(exerciseId: id))`, `router.back()` etc.
 /// Views never push or build destinations themselves.

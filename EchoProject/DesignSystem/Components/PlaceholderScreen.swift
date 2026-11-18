@@ -6,7 +6,6 @@ import SwiftUI
 /// navigated end to end from the start. Delete once no route uses it.
 struct PlaceholderScreen: View {
     let title: String
-    let owner: String
     var note: String? = nil
 
     var body: some View {
@@ -14,9 +13,6 @@ struct PlaceholderScreen: View {
             Text(title)
                 .echoFont(.title, .bold)
                 .foregroundStyle(EchoColor.textPrimary)
-            Text("Owner: \(owner)")
-                .echoFont(.supporting)
-                .foregroundStyle(EchoColor.textSecondary)
             if let note {
                 Text(note)
                     .echoFont(.caption)
@@ -33,6 +29,6 @@ struct PlaceholderScreen: View {
 
 #Preview {
     NavigationStack {
-        PlaceholderScreen(title: "Quick Check", owner: "Dev A", note: "8 questions")
+        PlaceholderScreen(title: "Quick Check", note: "8 questions: Often / Sometimes / Never")
     }
 }

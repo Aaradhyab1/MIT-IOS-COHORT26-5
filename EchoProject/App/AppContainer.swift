@@ -1,17 +1,19 @@
 import Foundation
 import Observation
 
-/// Builds every service once and hands them to ViewModels. Owner: Dev A.
+/// The composition root: creates every service once and builds ViewModels with them.
 ///
-/// Views never create services. A screen gets its ViewModel from a factory
-/// method here, e.g.:
+/// Views never create services or reach into repositories. A screen gets its
+/// ViewModel from a factory method, for example:
 ///
 ///     func makeDetectionViewModel(exerciseId: String) -> DetectionViewModel {
 ///         DetectionViewModel(exerciseId: exerciseId, content: content,
 ///                            audio: audio, progress: progress, router: router)
 ///     }
 ///
-/// Each dev adds factories for their own screens in the MARK section below.
+/// Factories live in one extension file per feature (`Features/<Feature>/AppContainer+<Feature>.swift`),
+/// so teammates add screens without editing the same file.
+/// Swapping dummy data for real storage later means changing only `dummy()` below.
 @Observable
 @MainActor
 final class AppContainer {
@@ -22,8 +24,8 @@ final class AppContainer {
     let audio: any AudioPlaybackService
     let recording: any RecordingService
 
-    /// The concrete dummy recorder, so the hidden debug menu can switch
-    /// between normal / mic denied / no voice. Nil once a real recorder exists.
+    /// The concrete dummy recorder, exposed so a debug menu can switch between
+    /// normal, mic-denied and no-voice scenarios. Nil once a real recorder is used.
     let dummyRecording: DummyRecordingService?
 
     init(
@@ -59,9 +61,11 @@ final class AppContainer {
         )
     }
 
-    // MARK: - ViewModel factories
-    // Dev A: onboarding, home
-    // Dev B: listening templates, level libraries
-    // Dev C: speaking templates, speaking library
-    // Dev D: progress, story player
+    // MARK: - Navigation support
+
+    /// Which template plays an exercise. Lets RouteDestinationView pick a screen
+    /// without reading a repository itself.
+    func exerciseType(for exerciseId: String) -> ExerciseType? {
+        content.exercise(id: exerciseId)?.type
+    }
 }

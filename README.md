@@ -1,30 +1,74 @@
-## Where things live
+# Echo
 
-| Folder | What | Owner |
-| --- | --- | --- |
-| `App/` | `EchoApp`, `AppContainer` (builds services + ViewModels), `AppRouter`, `Route`, tab shell | A |
-| `Core/Models/` | Frozen data shapes (Level, Exercise, ChildProfile, Outcome, …) | D (changes need all 4) |
-| `Core/DummyData/` | All sample content and progress | D |
-| `Core/Repositories/` | Content / Profile / Progress protocols + in-memory versions | D |
-| `Core/Services/` | Audio / Recording protocols + dummy versions | C |
-| `DesignSystem/` | Colours, type scale, shared components | A |
-| `Features/Onboarding`, `Features/Home` | Splash → Quick Check → Home | A |
-| `Features/Listening/` | Level libraries + ListenAndRespond, OddOneOut, PictureChoice | B |
-| `Features/Speaking/` | ListenAndRecord, ReadAlong, Conversation | C |
-| `Features/Progress/` + StoryPlayer | Progress tab, Comprehension stories | D |
+Auditory rehabilitation for children with hearing aids or cochlear implants, used by a
+parent together with the child. iOS 26, SwiftUI, strict MVVM.
 
-## MVVM rules (checked on every PR)
+This release is a fully clickable app running on **hardcoded dummy data**: there is no
+database or backend yet. Everything below the ViewModels sits behind protocols, so real
+storage can replace the dummy layer later without changing any screen.
 
-- One `XxxView.swift` + one `XxxViewModel.swift` per screen, side by side.
-- Views: layout only. No logic, no data access, no service calls.
-- ViewModels: `@Observable @MainActor final class`, `import Foundation` + `import Observation` only,
-  services passed into `init` as protocols, navigation via `router.go(...)`.
-- Nothing in `Features/` touches `DummyData` or creates a service directly.
-- Run `./scripts/check-mvvm.sh` before opening a PR. Any output = fix before merging.
+## Getting started
+
+1. Clone the repo and open `EchoProject.xcodeproj` in Xcode 26.
+2. Run the app (⌘R): a Splash placeholder appears; **Skip to Home** opens the three tabs.
+3. Run the tests (⌘U): all 17 should pass.
+
+## Project structure
+
+```
+EchoProject/
+├── App/                 Composition root: app entry, AppContainer, AppRouter, routes, tab shell
+├── Core/
+│   ├── Models/          Plain data types shared by every feature (frozen)
+│   ├── DummyData/       Hardcoded sample content and progress
+│   ├── Repositories/    Data access protocols + in-memory implementations
+│   └── Services/        Audio and recording protocols + dummy implementations
+├── DesignSystem/
+│   ├── Tokens/          Colours and type scale from the Figma design
+│   └── Components/      Reusable UI pieces
+├── Features/            One folder per feature; each screen = View + ViewModel + factory
+│   ├── Onboarding/      Splash, child profile, path choice, Quick Check
+│   ├── Home/            Listening and Speaking home screens
+│   ├── Practice/        Before you start, completion, leave overlay (shared by all exercises)
+│   ├── Listening/       ListenAndRespond, OddOneOut, PictureChoice
+│   ├── Speaking/        ListenAndRecord, ReadAlong, Conversation
+│   ├── Comprehension/   StoryPlayer, Ordering, Matching
+│   ├── LevelLibrary/    Exercise list for any level, both tracks
+│   └── Progress/        Overview, Listening and Speaking detail
+└── Resources/           Asset catalog
+EchoProjectTests/        Unit tests for models, repositories and ViewModels
+scripts/check-mvvm.sh    Architecture check, run before every pull request
+```
+
+## MVVM rules
+
+| Layer | Responsibility | May import | Must not |
+| --- | --- | --- | --- |
+| View | Layout; shows ViewModel state; forwards user actions | SwiftUI | Contain logic, read data, call services |
+| ViewModel | Screen state, scoring, validation, navigation decisions | Foundation, Observation | Import SwiftUI, touch `DummyData` |
+| Model | Shape of the data | Foundation | Hold UI state or call services |
+| Repository / Service | Provide data and device features behind a protocol | Foundation | Know which screen calls it |
+
+- Each screen is a `XxxView.swift` and `XxxViewModel.swift` pair in the same folder.
+- ViewModels are `@Observable @MainActor final class`es that receive repositories and
+  services as protocols in `init`, built by a factory method in the feature's
+  `AppContainer+<Feature>.swift` file.
+- Navigation goes through `AppRouter`; destinations are built only in `RouteDestinationView`.
+- `./scripts/check-mvvm.sh` must print "MVVM check passed." before a pull request is opened.
 
 ## Conventions
 
-- Branches: `feature/<area>-<thing>`; PRs under ~400 lines; merged by 9 pm daily.
-- Exercise and asset ids are kebab-case; asset names follow `img_…`, `snd_…`, `level_…`, `ex_…`.
-- `TODO(copy)` in DummyData = text still to be copied exactly from the PRECODING page in Figma.
-- "Stage" is called **Level** everywhere in code and UI.
+- Terminology: the app uses **Level** (not Stage) in code and UI.
+- Ids are kebab-case (`detection.hide-and-seek.animal`); asset names use the prefixes
+  `img_`, `snd_`, `level_` and `ex_`, so artwork added under those names appears without code changes.
+- `TODO(copy)` in `Core/DummyData/` marks text still to be copied exactly from the Figma design.
+- Changes to `Core/Models/` are agreed by the whole team before merging.
+
+## Git workflow
+
+- `main` always builds and passes tests; nobody pushes to it directly.
+- Work on `feature/<area>-<thing>` branches cut from the latest `main`.
+- Open a pull request into `main` (under ~400 changed lines). Your review partner approves it;
+  you merge it yourself with **Squash and merge**, then delete the branch.
+- Conflicts are fixed on your own branch (merge `origin/main` into it), never on `main`.
+- Milestone tags: `v0-freeze` (architecture frozen), `v0.9` (feature freeze), `v1.0-review` (release).

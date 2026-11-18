@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The Listening / Speaking / Progress tab shell. Each tab owns its own stack.
+/// The Listening / Speaking / Progress tab shell. Each tab keeps its own
+/// navigation stack, so switching tabs does not lose your place.
 struct MainTabView: View {
     @Environment(AppRouter.self) private var router
 
@@ -10,24 +11,24 @@ struct MainTabView: View {
         TabView(selection: $router.selectedTab) {
             Tab("Listening", systemImage: "ear", value: AppTab.listening) {
                 NavigationStack(path: $router.listeningPath) {
-                    // TODO(Dev A, Sat 21 Nov): replace with HomeView.
-                    PlaceholderScreen(title: "Listening", owner: "Dev A", note: "Today's practice card, level journey path")
+                    // TODO: Replace with HomeView.
+                    PlaceholderScreen(title: "Listening", note: "Today's practice and the level journey")
                         .withRouteDestinations()
                 }
             }
 
             Tab("Speaking", systemImage: "waveform", value: AppTab.speaking) {
                 NavigationStack(path: $router.speakingPath) {
-                    // TODO(Dev A, Sun 22 Nov): replace with SpeakingHomeView.
-                    PlaceholderScreen(title: "Speaking", owner: "Dev A", note: "Sounds, Words, Paragraphs, Conversation")
+                    // TODO: Replace with SpeakingHomeView.
+                    PlaceholderScreen(title: "Speaking", note: "Sounds, Words, Paragraphs, Conversation")
                         .withRouteDestinations()
                 }
             }
 
             Tab("Progress", systemImage: "chart.bar", value: AppTab.progress) {
                 NavigationStack(path: $router.progressPath) {
-                    // TODO(Dev D, Sat 21 Nov): replace with ProgressOverviewView.
-                    PlaceholderScreen(title: "Progress", owner: "Dev D", note: "Streak, sessions, learning paths")
+                    // TODO: Replace with ProgressOverviewView.
+                    PlaceholderScreen(title: "Progress", note: "Streak, sessions and learning paths")
                         .withRouteDestinations()
                 }
             }

@@ -1,8 +1,8 @@
 import Foundation
 
 /// Every screen you can push onto a navigation stack.
-/// Add a case here (and its destination in RouteDestinationView) for new screens;
-/// tell the team when you do, since everyone shares this file.
+/// Add a case here, and its destination in RouteDestinationView, for each new screen.
+/// Shared by every feature: keep changes small to avoid merge conflicts.
 enum Route: Hashable {
     // Onboarding
     case childProfile

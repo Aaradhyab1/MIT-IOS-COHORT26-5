@@ -1,71 +1,70 @@
 import SwiftUI
 
-/// Maps each Route to its screen. The only place destinations are built.
+/// Maps each Route to its screen. The only place navigation destinations are built.
 ///
-/// As screens land, replace a placeholder with the real View, built from a
-/// ViewModel factory on AppContainer:
+/// As screens are built, each placeholder is replaced by the real View with its
+/// ViewModel from an AppContainer factory, for example:
 ///
 ///     case .quickCheck:
 ///         QuickCheckView(vm: container.makeQuickCheckViewModel())
-///
-/// For `.exercise`, look up the exercise type and pick the template View.
 struct RouteDestinationView: View {
     @Environment(AppContainer.self) private var container
     let route: Route
 
     var body: some View {
         switch route {
-        // Onboarding — Dev A
+        // Onboarding
         case .childProfile:
-            PlaceholderScreen(title: "Child profile", owner: "Dev A")
+            PlaceholderScreen(title: "Child profile", note: "Date of birth and device activation date")
         case .choosePath:
-            PlaceholderScreen(title: "Choose your path", owner: "Dev A", note: "Quick Check or pick a level")
+            PlaceholderScreen(title: "Choose your path", note: "Quick Check or pick a level")
         case .chooseLevel:
-            PlaceholderScreen(title: "Choose a level", owner: "Dev A")
+            PlaceholderScreen(title: "Choose a level")
         case .quickCheck:
-            PlaceholderScreen(title: "Quick Check", owner: "Dev A", note: "8 questions: Often / Sometimes / Never")
+            PlaceholderScreen(title: "Quick Check", note: "8 questions: Often / Sometimes / Never")
         case .quickCheckResult:
-            PlaceholderScreen(title: "Quick Check result", owner: "Dev A", note: "Great start! Level 3")
+            PlaceholderScreen(title: "Quick Check result", note: "Recommended starting level")
 
-        // Libraries and exercises — Dev B (Listening), Dev C (Speaking), Dev D (stories)
+        // Libraries and exercises
         case .levelLibrary(let levelId):
-            PlaceholderScreen(title: "Level library", owner: "Dev B / Dev C", note: levelId)
+            PlaceholderScreen(title: "Level library", note: levelId)
         case .beforeYouStart(let exerciseId):
-            PlaceholderScreen(title: "Before you start", owner: "Dev A", note: exerciseId)
+            PlaceholderScreen(title: "Before you start", note: exerciseId)
         case .exercise(let exerciseId):
             exerciseScreen(for: exerciseId)
         case .completion(let exerciseId, let outcome):
-            PlaceholderScreen(title: "Completion", owner: "Dev B", note: "\(exerciseId) · \(outcome.rawValue)")
+            PlaceholderScreen(title: "Completion", note: "\(exerciseId) · \(outcome.rawValue)")
 
-        // Progress — Dev D
+        // Progress
         case .listeningProgress:
-            PlaceholderScreen(title: "Listening progress", owner: "Dev D")
+            PlaceholderScreen(title: "Listening progress")
         case .speakingProgress:
-            PlaceholderScreen(title: "Speaking progress", owner: "Dev D")
+            PlaceholderScreen(title: "Speaking progress")
         }
     }
 
+    /// One template screen per ExerciseType; every exercise of that type reuses it.
     @ViewBuilder
     private func exerciseScreen(for exerciseId: String) -> some View {
-        switch container.content.exercise(id: exerciseId)?.type {
+        switch container.exerciseType(for: exerciseId) {
         case .listenAndRespond:
-            PlaceholderScreen(title: "Listen and respond", owner: "Dev B", note: exerciseId)
+            PlaceholderScreen(title: "Listen and respond", note: exerciseId)
         case .oddOneOut:
-            PlaceholderScreen(title: "Odd one out", owner: "Dev B", note: exerciseId)
+            PlaceholderScreen(title: "Odd one out", note: exerciseId)
         case .pictureChoice:
-            PlaceholderScreen(title: "Picture choice", owner: "Dev B", note: exerciseId)
+            PlaceholderScreen(title: "Picture choice", note: exerciseId)
         case .storyPlayer:
-            PlaceholderScreen(title: "Story player", owner: "Dev D", note: exerciseId)
+            PlaceholderScreen(title: "Story player", note: exerciseId)
         case .ordering, .matching:
-            PlaceholderScreen(title: "Coming soon", owner: "Cut list", note: exerciseId)
+            PlaceholderScreen(title: "Coming soon", note: exerciseId)
         case .listenAndRecord:
-            PlaceholderScreen(title: "Listen and record", owner: "Dev C", note: exerciseId)
+            PlaceholderScreen(title: "Listen and record", note: exerciseId)
         case .readAlong:
-            PlaceholderScreen(title: "Read along", owner: "Dev C", note: exerciseId)
+            PlaceholderScreen(title: "Read along", note: exerciseId)
         case .conversation:
-            PlaceholderScreen(title: "Conversation", owner: "Dev C", note: exerciseId)
+            PlaceholderScreen(title: "Conversation", note: exerciseId)
         case nil:
-            PlaceholderScreen(title: "Unknown exercise", owner: "—", note: exerciseId)
+            PlaceholderScreen(title: "Exercise not found", note: exerciseId)
         }
     }
 }

@@ -2,67 +2,73 @@ import SwiftUI
 
 /// Maps each Route to its screen. The only place navigation destinations are built.
 ///
-/// As screens are built, each placeholder is replaced by the real View with its
-/// ViewModel from an AppContainer factory, for example:
-///
-///     case .quickCheck:
-///         QuickCheckView(vm: container.makeQuickCheckViewModel())
+/// Every screen is built from its ViewModel factory (`container.make…ViewModel`).
+/// When you replace a placeholder screen, edit only your own lines here.
 struct RouteDestinationView: View {
     @Environment(AppContainer.self) private var container
     let route: Route
 
     var body: some View {
         switch route {
-        // Onboarding
+        // Onboarding — Features/Onboarding
         case .childProfile:
-            PlaceholderScreen(title: "Child profile", note: "Date of birth and device activation date")
+            ChildProfileView(vm: container.makeChildProfileViewModel())
         case .choosePath:
-            PlaceholderScreen(title: "Choose your path", note: "Quick Check or pick a level")
-        case .chooseLevel:
-            PlaceholderScreen(title: "Choose a level")
+            ChoosePathView(vm: container.makeChoosePathViewModel())
         case .quickCheck:
-            PlaceholderScreen(title: "Quick Check", note: "8 questions: Often / Sometimes / Never")
+            QuickCheckView(vm: container.makeQuickCheckViewModel())
         case .quickCheckResult:
-            PlaceholderScreen(title: "Quick Check result", note: "Recommended starting level")
+            QuickCheckResultView(vm: container.makeQuickCheckResultViewModel())
 
-        // Libraries and exercises
+        // Shared screens — Shared/
         case .levelLibrary(let levelId):
-            PlaceholderScreen(title: "Level library", note: levelId)
+            LevelLibraryView(vm: container.makeLevelLibraryViewModel(levelId: levelId))
+        case .exerciseCollection(let levelId, let collection):
+            ExerciseCollectionView(vm: container.makeExerciseCollectionViewModel(levelId: levelId, collection: collection))
         case .beforeYouStart(let exerciseId):
-            PlaceholderScreen(title: "Before you start", note: exerciseId)
+            BeforeYouStartView(vm: container.makeBeforeYouStartViewModel(exerciseId: exerciseId))
         case .exercise(let exerciseId):
             exerciseScreen(for: exerciseId)
         case .completion(let exerciseId, let outcome):
-            PlaceholderScreen(title: "Completion", note: "\(exerciseId) · \(outcome.rawValue)")
+            CompletionView(vm: container.makeCompletionViewModel(exerciseId: exerciseId, outcome: outcome))
 
-        // Progress
+        // Progress — Features/Progress
         case .listeningProgress:
-            PlaceholderScreen(title: "Listening progress")
+            ListeningProgressView(vm: container.makeListeningProgressViewModel())
         case .speakingProgress:
-            PlaceholderScreen(title: "Speaking progress")
+            SpeakingProgressView(vm: container.makeSpeakingProgressViewModel())
         }
     }
 
-    /// One template screen per ExerciseType; every exercise of that type reuses it.
+    /// One screen per exercise template; every exercise of that type reuses it.
     @ViewBuilder
     private func exerciseScreen(for exerciseId: String) -> some View {
         switch container.exerciseType(for: exerciseId) {
+        // Listening — Features/Listening/<Level>
         case .listenAndRespond:
-            PlaceholderScreen(title: "Listen and respond", note: exerciseId)
+            ListenAndRespondView(vm: container.makeListenAndRespondViewModel(exerciseId: exerciseId))
         case .oddOneOut:
-            PlaceholderScreen(title: "Odd one out", note: exerciseId)
+            OddOneOutView(vm: container.makeOddOneOutViewModel(exerciseId: exerciseId))
         case .pictureChoice:
-            PlaceholderScreen(title: "Picture choice", note: exerciseId)
+            PictureChoiceView(vm: container.makePictureChoiceViewModel(exerciseId: exerciseId))
         case .storyPlayer:
-            PlaceholderScreen(title: "Story player", note: exerciseId)
+            StoryPlayerView(vm: container.makeStoryPlayerViewModel(exerciseId: exerciseId))
         case .ordering, .matching:
-            PlaceholderScreen(title: "Coming soon", note: exerciseId)
+            // Ordering and Matching are played inside each story (StoryPlayerView).
+            PlaceholderScreen(title: "Play these inside a story", note: exerciseId)
+
+        // Speaking — Features/Speaking/<Category>
         case .listenAndRecord:
-            PlaceholderScreen(title: "Listen and record", note: exerciseId)
+            if container.levelId(for: exerciseId) == "speaking.words" {
+                WordsPracticeView(vm: container.makeWordsPracticeViewModel(exerciseId: exerciseId))
+            } else {
+                SoundsPracticeView(vm: container.makeSoundsPracticeViewModel(exerciseId: exerciseId))
+            }
         case .readAlong:
-            PlaceholderScreen(title: "Read along", note: exerciseId)
+            SentencesPracticeView(vm: container.makeSentencesPracticeViewModel(exerciseId: exerciseId))
         case .conversation:
-            PlaceholderScreen(title: "Conversation", note: exerciseId)
+            ConversationView(vm: container.makeConversationViewModel(exerciseId: exerciseId))
+
         case nil:
             PlaceholderScreen(title: "Exercise not found", note: exerciseId)
         }

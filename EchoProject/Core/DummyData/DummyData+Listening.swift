@@ -82,9 +82,9 @@ extension DummyData {
             type: .listenAndRespond,
             title: "Listen for the Animal",
             summary: "Find the hidden animal by its sound",         // TODO(copy)
-            collection: "Hide & Seek",
+            collection: "Story Hide & Seek",
             illustration: "ex_hide-and-seek-animal",
-            items: [listenItem("animal-1", sound: "dog"), listenItem("animal-2", sound: "cat")]
+            items: [listenItem("animal-1", sound: "bunny"), listenItem("animal-2", sound: "dog")]
         ),
         Exercise(
             id: "detection.hide-and-seek.doorbell",
@@ -92,7 +92,7 @@ extension DummyData {
             type: .listenAndRespond,
             title: "Hear the Doorbell",
             summary: "Who is at the door?",                         // TODO(copy)
-            collection: "Hide & Seek",
+            collection: "Story Hide & Seek",
             illustration: "ex_hide-and-seek-doorbell",
             items: [listenItem("doorbell-1", sound: "doorbell"), listenItem("doorbell-2", sound: "knock")]
         ),
@@ -102,7 +102,7 @@ extension DummyData {
             type: .listenAndRespond,
             title: "Spot the Clap",
             summary: "Listen for a clap",                           // TODO(copy)
-            collection: "Hide & Seek",
+            collection: "Story Hide & Seek",
             illustration: "ex_hide-and-seek-clap",
             items: [listenItem("clap-1", sound: "clap"), listenItem("clap-2", sound: "clap-soft")]
         ),
@@ -112,7 +112,7 @@ extension DummyData {
             type: .listenAndRespond,
             title: "Catch the Drumbeat",
             summary: "Listen for the drum",                         // TODO(copy)
-            collection: "Hide & Seek",
+            collection: "Story Hide & Seek",
             illustration: "ex_hide-and-seek-drumbeat",
             items: [listenItem("drum-1", sound: "drum"), listenItem("drum-2", sound: "drum-soft")]
         ),

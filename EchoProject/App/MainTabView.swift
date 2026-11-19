@@ -3,6 +3,7 @@ import SwiftUI
 /// The Listening / Speaking / Progress tab shell. Each tab keeps its own
 /// navigation stack, so switching tabs does not lose your place.
 struct MainTabView: View {
+    @Environment(AppContainer.self) private var container
     @Environment(AppRouter.self) private var router
 
     var body: some View {
@@ -11,24 +12,21 @@ struct MainTabView: View {
         TabView(selection: $router.selectedTab) {
             Tab("Listening", systemImage: "ear", value: AppTab.listening) {
                 NavigationStack(path: $router.listeningPath) {
-                    // TODO: Replace with HomeView.
-                    PlaceholderScreen(title: "Listening", note: "Today's practice and the level journey")
+                    ListeningHomeView(vm: container.makeListeningHomeViewModel())
                         .withRouteDestinations()
                 }
             }
 
             Tab("Speaking", systemImage: "waveform", value: AppTab.speaking) {
                 NavigationStack(path: $router.speakingPath) {
-                    // TODO: Replace with SpeakingHomeView.
-                    PlaceholderScreen(title: "Speaking", note: "Sounds, Words, Paragraphs, Conversation")
+                    SpeakingHomeView(vm: container.makeSpeakingHomeViewModel())
                         .withRouteDestinations()
                 }
             }
 
             Tab("Progress", systemImage: "chart.bar", value: AppTab.progress) {
                 NavigationStack(path: $router.progressPath) {
-                    // TODO: Replace with ProgressOverviewView.
-                    PlaceholderScreen(title: "Progress", note: "Streak, sessions and learning paths")
+                    ProgressOverviewView(vm: container.makeProgressOverviewViewModel())
                         .withRouteDestinations()
                 }
             }

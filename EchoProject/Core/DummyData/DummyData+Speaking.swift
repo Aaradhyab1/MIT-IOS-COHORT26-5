@@ -24,13 +24,13 @@ extension DummyData {
             exerciseIds: ["words.two-letter", "words.three-letter", "words.four-letter", "words.five-plus-letter"]
         ),
         Level(
-            id: "speaking.paragraphs",
+            id: "speaking.sentences",
             track: .speaking,
             order: 3,
-            title: "Paragraphs",
+            title: "Sentences",
             subtitle: "Read along and tap any word",                // TODO(copy)
-            illustration: "level_paragraphs",
-            exerciseIds: ["paragraphs.paragraph-1"]
+            illustration: "level_sentences",
+            exerciseIds: ["sentences.sentence-1"]
         ),
         Level(
             id: "speaking.conversation",
@@ -72,44 +72,56 @@ extension DummyData {
             items: [recordItem("pattern-ba-ba", text: "ba ba")]                     // TODO(copy)
         ),
 
-        // Words
+        // Words: listen, say the word once, checked with speech recognition (Figma: 12 · Speech — Words)
         Exercise(
             id: "words.two-letter", levelId: "speaking.words", type: .listenAndRecord,
-            title: "2-letter words", summary: "Short words to start",               // TODO(copy)
+            title: "2 letter", summary: "Short words to start",                     // TODO(copy)
             illustration: "ex_words-2",
-            items: [recordItem("word-up", text: "Up")]                              // TODO(copy)
+            items: [
+                wordItem("Up", sounds: ["U", "P"], hint: "uh · p → up"),
+                wordItem("Go", sounds: ["G", "O"], hint: "g · oh → go")
+            ]
         ),
         Exercise(
             id: "words.three-letter", levelId: "speaking.words", type: .listenAndRecord,
-            title: "3-letter words", summary: "Words like Sun",                     // TODO(copy)
+            title: "3 letter", summary: "Words like Sun",                           // TODO(copy)
             illustration: "ex_words-3",
-            items: [recordItem("word-sun", text: "Sun")]
+            items: [
+                wordItem("Sun", sounds: ["S", "U", "N"], hint: "sss · uh · nnn → sun", accepted: ["sun", "son"]),
+                wordItem("Cat", sounds: ["C", "A", "T"], hint: "k · a · t → cat")
+            ]
         ),
         Exercise(
             id: "words.four-letter", levelId: "speaking.words", type: .listenAndRecord,
-            title: "4-letter words", summary: "Words like Ball",                    // TODO(copy)
+            title: "4 letter", summary: "Words like Ball",                          // TODO(copy)
             illustration: "ex_words-4",
-            items: [recordItem("word-ball", text: "Ball")]
+            items: [
+                wordItem("Ball", sounds: ["B", "A", "LL"], hint: "b · aw · l → ball"),
+                wordItem("Fish", sounds: ["F", "I", "SH"], hint: "f · i · sh → fish")
+            ]
         ),
         Exercise(
             id: "words.five-plus-letter", levelId: "speaking.words", type: .listenAndRecord,
-            title: "5+ letter words", summary: "Longer words",                      // TODO(copy)
+            title: "5 letter & more", summary: "Longer words",                      // TODO(copy)
             illustration: "ex_words-5",
-            items: [recordItem("word-apple", text: "Apple")]                        // TODO(copy)
+            items: [
+                wordItem("Apple", sounds: ["A", "PP", "LE"], hint: "a · p · ul → apple"),
+                wordItem("Tiger", sounds: ["T", "I", "G", "ER"], hint: "t · eye · g · er → tiger")
+            ]
         ),
 
-        // Paragraphs: tap a word to hear it
+        // Sentences: read along, tap a word to hear it
         Exercise(
-            id: "paragraphs.paragraph-1", levelId: "speaking.paragraphs", type: .readAlong,
-            title: "Paragraph 1", summary: "Read along, tap a word to hear it",     // TODO(copy)
-            illustration: "ex_paragraph-1",
+            id: "sentences.sentence-1", levelId: "speaking.sentences", type: .readAlong,
+            title: "Sentence 1", summary: "Read along, tap a word to hear it",     // TODO(copy)
+            illustration: "ex_sentence-1",
             repetitions: 1,
             items: [
                 ExerciseItem(
-                    id: "paragraph-1",
-                    audio: "snd_paragraph-1",
-                    image: "img_paragraph-1",
-                    text: "TODO(copy) paragraph text from PRECODING"
+                    id: "sentence-1",
+                    audio: "snd_sentence-1",
+                    image: "img_sentence-1",
+                    text: "TODO(copy) sentence text from PRECODING"
                 )
             ]
         ),
@@ -127,4 +139,22 @@ extension DummyData {
             ]
         )
     ]
+
+    // MARK: - Builders
+
+    /// A word to say, with its sound chips ("S", "U", "N") and how-to-say-it hint.
+    /// `accepted` lists what counts as said right; it defaults to the word itself.
+    private static func wordItem(_ word: String, sounds: [String], hint: String, accepted: [String]? = nil) -> ExerciseItem {
+        let id = word.lowercased()
+        return ExerciseItem(
+            id: "word-\(id)",
+            prompt: "Listen, then say the word",
+            audio: "snd_word-\(id)",
+            image: "img_word-\(id)",
+            text: word,
+            options: sounds.enumerated().map { Option(id: "\(id)-\($0.offset)", label: $0.element) },
+            hint: hint,
+            acceptedAnswers: accepted ?? [id]
+        )
+    }
 }

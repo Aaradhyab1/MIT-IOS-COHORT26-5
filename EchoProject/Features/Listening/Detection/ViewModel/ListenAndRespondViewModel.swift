@@ -61,21 +61,34 @@ final class ListenAndRespondViewModel {
         case .ready: return roundIndex == 0 ? "An animal is hiding." : "Is something hiding?"
         case .playing: return "The animal is making a sound."
         case .asking: return nil
-        case .reveal: return lastAnswerCorrect ? "Nice listening!" : "Good try!"
+        case .reveal: return lastAnswerCorrect ? "Nice listening!" : "Almost there!"
         }
     }
 
     var bubbleDetail: String? {
         switch phase {
         case .ready: return roundIndex == 0 ? "Tap Play to hear the sound." : "Tap Play to hear it."
-        case .reveal: return "Let’s find another animal."
+        case .reveal:
+            if lastAnswerCorrect {
+                return isLastRound ? "You heard both animals!" : "Let’s find another animal."
+            }
+            return isLastRound
+                ? "That was the \(soundName). You’re learning with every try!"
+                : "That was the \(soundName). Let’s try the next sound."
         default: return nil
         }
     }
 
     /// Picture that pops up on the cloud after the reveal (nil = empty cloud).
     var revealImage: String? {
-        phase == .reveal && hasSound ? currentItem?.image : nil
+        guard phase == .reveal, hasSound else { return nil }
+        guard !lastAnswerCorrect else { return currentItem?.image }
+
+        switch currentItem?.text?.lowercased() {
+        case "cat": return "img_cat_worried"
+        case "dog": return "img_dog_worried"
+        default: return currentItem?.image
+        }
     }
 
     /// True when the reveal picture already has its own cloud drawn in (img_bunny),
@@ -125,6 +138,10 @@ final class ListenAndRespondViewModel {
         audio.stop()
         if phase == .playing { phase = .ready }
         router.presentLeavePractice()
+    }
+
+    func stopAll() {
+        audio.stop()
     }
 
     // MARK: - Private

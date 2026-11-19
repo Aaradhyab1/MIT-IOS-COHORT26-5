@@ -79,8 +79,23 @@ struct SpeakingTests {
         #expect(vm.phase == .preparing)
         await vm.onAppear()
         #expect(vm.phase == .listen)
-        #expect(vm.word == "Sun")
-        #expect(vm.soundChips == ["S", "U", "N"])
+        #expect(!vm.word.isEmpty)
+        #expect(!vm.soundChips.isEmpty)
+    }
+
+    @Test func eachWordExerciseHasTwelveWords() {
+        let content = InMemoryContentRepository()
+        for id in ["words.two-letter", "words.three-letter", "words.four-letter", "words.five-plus-letter"] {
+            #expect(content.exercise(id: id)?.items.count == 12, "\(id) should have 12 words")
+        }
+    }
+
+    @Test func practicePicksFiveRandomWordsFromTheExercise() {
+        let container = AppContainer.dummy(startPastOnboarding: true)
+        let allWords = Set(container.content.exercise(id: "words.three-letter")?.items.compactMap(\.text) ?? [])
+        let vm = container.makeWordsPracticeViewModel(exerciseId: "words.three-letter")
+        #expect(vm.wordCount == WordsPracticeViewModel.wordsPerSession)
+        #expect(allWords.contains(vm.word))
     }
 
     @Test func wordsShowsUnavailableWhenSpeechCannotRun() async {

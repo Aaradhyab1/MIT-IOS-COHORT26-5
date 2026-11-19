@@ -72,14 +72,26 @@ extension DummyData {
             items: [recordItem("pattern-ba-ba", text: "ba ba")]                     // TODO(copy)
         ),
 
-        // Words: listen, say the word once, checked with speech recognition (Figma: 12 · Speech — Words)
+        // Words: listen, say the word once, checked with speech recognition (Figma: 12 · Speech — Words).
+        // Each exercise holds 12 words; every practice picks 5 of them at random
+        // (WordsPracticeViewModel.wordsPerSession).
         Exercise(
             id: "words.two-letter", levelId: "speaking.words", type: .listenAndRecord,
             title: "2 letter", summary: "Short words to start",                     // TODO(copy)
             illustration: "ex_words-2",
             items: [
                 wordItem("Up", sounds: ["U", "P"], hint: "uh · p → up"),
-                wordItem("Go", sounds: ["G", "O"], hint: "g · oh → go")
+                wordItem("Go", sounds: ["G", "O"], hint: "g · oh → go"),
+                wordItem("No", sounds: ["N", "O"], hint: "n · oh → no", accepted: ["no", "know"]),
+                wordItem("Me", sounds: ["M", "E"], hint: "m · ee → me"),
+                wordItem("We", sounds: ["W", "E"], hint: "w · ee → we", accepted: ["we", "wee"]),
+                wordItem("Hi", sounds: ["H", "I"], hint: "h · eye → hi", accepted: ["hi", "high"]),
+                wordItem("Be", sounds: ["B", "E"], hint: "b · ee → be", accepted: ["be", "bee"]),
+                wordItem("In", sounds: ["I", "N"], hint: "i · n → in", accepted: ["in", "inn"]),
+                wordItem("On", sounds: ["O", "N"], hint: "o · n → on"),
+                wordItem("At", sounds: ["A", "T"], hint: "a · t → at"),
+                wordItem("It", sounds: ["I", "T"], hint: "i · t → it"),
+                wordItem("Is", sounds: ["I", "S"], hint: "i · z → is")
             ]
         ),
         Exercise(
@@ -88,7 +100,17 @@ extension DummyData {
             illustration: "ex_words-3",
             items: [
                 wordItem("Sun", sounds: ["S", "U", "N"], hint: "sss · uh · nnn → sun", accepted: ["sun", "son"]),
-                wordItem("Cat", sounds: ["C", "A", "T"], hint: "k · a · t → cat")
+                wordItem("Cat", sounds: ["C", "A", "T"], hint: "k · a · t → cat"),
+                wordItem("Dog", sounds: ["D", "O", "G"], hint: "d · o · g → dog"),
+                wordItem("Hat", sounds: ["H", "A", "T"], hint: "h · a · t → hat"),
+                wordItem("Bus", sounds: ["B", "U", "S"], hint: "b · uh · sss → bus"),
+                wordItem("Cup", sounds: ["C", "U", "P"], hint: "k · uh · p → cup"),
+                wordItem("Pig", sounds: ["P", "I", "G"], hint: "p · i · g → pig"),
+                wordItem("Bed", sounds: ["B", "E", "D"], hint: "b · e · d → bed"),
+                wordItem("Red", sounds: ["R", "E", "D"], hint: "r · e · d → red", accepted: ["red", "read"]),
+                wordItem("Box", sounds: ["B", "O", "X"], hint: "b · o · ks → box"),
+                wordItem("Fan", sounds: ["F", "A", "N"], hint: "f · a · n → fan"),
+                wordItem("Map", sounds: ["M", "A", "P"], hint: "m · a · p → map")
             ]
         ),
         Exercise(
@@ -97,7 +119,17 @@ extension DummyData {
             illustration: "ex_words-4",
             items: [
                 wordItem("Ball", sounds: ["B", "A", "LL"], hint: "b · aw · l → ball"),
-                wordItem("Fish", sounds: ["F", "I", "SH"], hint: "f · i · sh → fish")
+                wordItem("Fish", sounds: ["F", "I", "SH"], hint: "f · i · sh → fish"),
+                wordItem("Duck", sounds: ["D", "U", "CK"], hint: "d · uh · k → duck"),
+                wordItem("Milk", sounds: ["M", "I", "L", "K"], hint: "m · i · l · k → milk"),
+                wordItem("Frog", sounds: ["F", "R", "O", "G"], hint: "f · r · o · g → frog"),
+                wordItem("Book", sounds: ["B", "OO", "K"], hint: "b · oo · k → book"),
+                wordItem("Cake", sounds: ["C", "A", "KE"], hint: "k · ay · k → cake"),
+                wordItem("Tree", sounds: ["T", "R", "EE"], hint: "t · r · ee → tree"),
+                wordItem("Bird", sounds: ["B", "IR", "D"], hint: "b · er · d → bird"),
+                wordItem("Lion", sounds: ["L", "I", "ON"], hint: "l · eye · un → lion"),
+                wordItem("Moon", sounds: ["M", "OO", "N"], hint: "m · oo · n → moon"),
+                wordItem("Star", sounds: ["S", "T", "AR"], hint: "s · t · ar → star")
             ]
         ),
         Exercise(
@@ -106,7 +138,17 @@ extension DummyData {
             illustration: "ex_words-5",
             items: [
                 wordItem("Apple", sounds: ["A", "PP", "LE"], hint: "a · p · ul → apple"),
-                wordItem("Tiger", sounds: ["T", "I", "G", "ER"], hint: "t · eye · g · er → tiger")
+                wordItem("Tiger", sounds: ["T", "I", "G", "ER"], hint: "t · eye · g · er → tiger"),
+                wordItem("Water", sounds: ["W", "A", "T", "ER"], hint: "w · aw · t · er → water"),
+                wordItem("House", sounds: ["H", "OU", "SE"], hint: "h · ow · s → house"),
+                wordItem("Happy", sounds: ["H", "A", "PP", "Y"], hint: "h · a · p · ee → happy"),
+                wordItem("Pencil", sounds: ["P", "E", "N", "C", "IL"], hint: "p · e · n · s · ul → pencil"),
+                wordItem("Banana", sounds: ["B", "A", "N", "A", "N", "A"], hint: "b · uh · n · ah · n · uh → banana"),
+                wordItem("Rabbit", sounds: ["R", "A", "BB", "I", "T"], hint: "r · a · b · i · t → rabbit"),
+                wordItem("Flower", sounds: ["F", "L", "OW", "ER"], hint: "f · l · ow · er → flower", accepted: ["flower", "flour"]),
+                wordItem("Monkey", sounds: ["M", "O", "N", "K", "EY"], hint: "m · uh · n · k · ee → monkey"),
+                wordItem("Orange", sounds: ["OR", "A", "N", "GE"], hint: "or · i · n · j → orange"),
+                wordItem("Window", sounds: ["W", "I", "N", "D", "OW"], hint: "w · i · n · d · oh → window")
             ]
         ),
 

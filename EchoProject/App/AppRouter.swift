@@ -69,6 +69,15 @@ final class AppRouter {
         overlay = nil
     }
 
+    /// "Leave" on the leave overlay: closes it and returns to the screen the exercise
+    /// was started from, removing the exercise and its Before you start screen.
+    func leavePractice() {
+        overlay = nil
+        updateCurrentPath { path in
+            path.removeLast(min(2, path.count))
+        }
+    }
+
     // MARK: - Private
 
     private func updateCurrentPath(_ change: (inout NavigationPath) -> Void) {

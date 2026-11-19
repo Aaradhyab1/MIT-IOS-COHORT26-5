@@ -13,7 +13,7 @@ enum ExerciseType: String, Codable, Hashable, CaseIterable {
 
     // Speaking
     case listenAndRecord    // Sounds and Words: listen to the model, record, repeat
-    case readAlong          // Paragraphs: tap a word to hear it
+    case readAlong          // Sentences: read along, tap a word to hear it
     case conversation       // Ice cream shop role-play
 
     var track: Track {
@@ -74,6 +74,8 @@ struct ExerciseItem: Codable, Identifiable, Hashable {
     let speaker: EchoCharacter?
     let options: [Option]?          // pictureChoice, oddOneOut
     let correctOptionId: String?
+    let hint: String?               // Words: how to say it, "sss · uh · nnn → sun"
+    let acceptedAnswers: [String]?  // Speaking: what counts as said right ("sun", "son")
 
     init(
         id: String,
@@ -83,7 +85,9 @@ struct ExerciseItem: Codable, Identifiable, Hashable {
         text: String? = nil,
         speaker: EchoCharacter? = nil,
         options: [Option]? = nil,
-        correctOptionId: String? = nil
+        correctOptionId: String? = nil,
+        hint: String? = nil,
+        acceptedAnswers: [String]? = nil
     ) {
         self.id = id
         self.prompt = prompt
@@ -93,6 +97,8 @@ struct ExerciseItem: Codable, Identifiable, Hashable {
         self.speaker = speaker
         self.options = options
         self.correctOptionId = correctOptionId
+        self.hint = hint
+        self.acceptedAnswers = acceptedAnswers
     }
 }
 

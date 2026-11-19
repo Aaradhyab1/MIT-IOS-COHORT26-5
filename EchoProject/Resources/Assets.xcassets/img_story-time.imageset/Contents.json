@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "img_story-time.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

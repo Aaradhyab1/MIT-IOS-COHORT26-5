@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Full-screen illustrated backdrops used behind exercise screens.
 ///
-/// Every Listening exercise and the Speaking Sounds, Words and Paragraphs screens share
+/// Every Listening exercise and the Speaking Sounds, Words and Sentences screens share
 /// the same pastel landscape. The Conversation role-play uses the ice cream shop.
 enum EchoBackdrop {
     case landscape

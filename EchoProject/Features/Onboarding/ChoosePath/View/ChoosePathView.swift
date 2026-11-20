@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Choose the Quick Check or pick a starting level (custom level overlay).
-/// Figma: Precoding_FINAL › 02 · Onboarding › Choose assessment or custom level.
-/// TODO: Build the real layout from Figma. Navigation already works through the ViewModel.
+/// "Where should we start?": Leo and Echo waving, the 4 levels at a glance,
+/// then Start the Quick Check or choose a level yourself.
+/// Figma: Precoding_FINAL › 02 · Onboarding › "Onboarding / Choose assessment or custom level".
 struct ChoosePathView: View {
     @State private var vm: ChoosePathViewModel
 
@@ -11,17 +11,73 @@ struct ChoosePathView: View {
     }
 
     var body: some View {
-        PlaceholderScreen(title: "Choose your path", note: "Quick Check or pick a level")
-            .safeAreaInset(edge: .bottom) {
-                VStack(spacing: EchoSpacing.m) {
-                Button("Take the Quick Check", action: vm.didTapQuickCheck)
-                    .buttonStyle(.echoPrimary)
-                Button("Choose a level myself", action: vm.didTapChooseLevel)
-                    .buttonStyle(.echoSecondary)
-                }
-                .padding(.horizontal, EchoSpacing.screenHorizontal)
-                .padding(.bottom, EchoSpacing.l)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Figma: "Art · Duo · Waving hello". Multiply hides the art's white backdrop.
+                EchoAssetImage(name: "img_duo_waving")
+                    .blendMode(.multiply)
+                    .frame(width: 176, height: 176)
+
+                Text("Where should we start?")
+                    .echoFont(.heading, .bold)
+                    .foregroundStyle(EchoColor.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
+                    .padding(.top, 14)
+
+                Text("8 quick questions show which of these 4 levels fits your child best.")
+                    .echoFont(.supporting)
+                    .foregroundStyle(EchoColor.textTertiary)
+                    .padding(.top, EchoSpacing.xs)
+
+                LevelOverviewGrid(levels: vm.levels)
+                    .padding(.top, 23)
             }
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 31)
+            .padding(.bottom, EchoSpacing.xl)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .overlay(alignment: .top) {
+            HStack {
+                EchoIconButton(systemImage: "chevron.left", accessibilityLabel: "Back", action: vm.didTapBack)
+                Spacer()
+                Button("Understand the levels", systemImage: "info.circle", action: vm.didTapLevelInfo)
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 22))
+                    .foregroundStyle(EchoColor.accent)
+                    .frame(width: 44, height: 44)
+                    .background(.white.opacity(0.9), in: Circle())
+                    .echoShadow(.badge)
+                    .buttonStyle(.plain)
+            }
+            .padding(.horizontal, EchoSpacing.screenHorizontal)
+            .padding(.top, 3)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: EchoSpacing.l) {
+                Button("Start the Quick Check", action: vm.didTapQuickCheck)
+                    .buttonStyle(.echoPrimary)
+                Button("I\u{2019}ll choose the level myself", action: vm.didTapChooseLevel)
+                    .buttonStyle(.echoSecondary)
+            }
+            .frame(maxWidth: 280)
+            .padding(.bottom, 24)
+        }
+        .echoScreenBackground()
+        .toolbar(.hidden, for: .navigationBar)
+        .overlay {
+            switch vm.overlay {
+            case .customLevel:
+                CustomLevelOverlay(vm: vm)
+                    .transition(.opacity)
+            case .levelInfo:
+                LevelInfoOverlay(levels: vm.levels, onClose: vm.didDismissOverlay)
+                    .transition(.opacity)
+            case nil:
+                EmptyView()
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: vm.overlay)
     }
 }
 

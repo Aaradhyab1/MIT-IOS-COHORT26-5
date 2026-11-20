@@ -6,6 +6,6 @@ import Foundation
 /// screen only edits files inside their own folder.
 extension AppContainer {
     func makeChoosePathViewModel() -> ChoosePathViewModel {
-        ChoosePathViewModel(router: router)
+        ChoosePathViewModel(router: router, content: content, profile: profile)
     }
 }

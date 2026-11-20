@@ -6,6 +6,6 @@ import Foundation
 /// screen only edits files inside their own folder.
 extension AppContainer {
     func makeQuickCheckViewModel() -> QuickCheckViewModel {
-        QuickCheckViewModel(router: router)
+        QuickCheckViewModel(router: router, content: content, profile: profile)
     }
 }

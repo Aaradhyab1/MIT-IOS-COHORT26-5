@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "img_grass_strip.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

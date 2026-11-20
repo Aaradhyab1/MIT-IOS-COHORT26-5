@@ -51,3 +51,14 @@ extension EchoColor {
     /// Tile behind a level's icon.
     static let symbolTile = Color(hex: 0x0A7CFF, opacity: 0.12)
 }
+
+extension EchoShadow {
+    /// Soft lift under tappable answer options, so they read as buttons.
+    static let option = EchoShadow(color: Color(hex: 0x0C3373, opacity: 0.08), radius: 4, y: 2)
+}
+
+extension EchoColor {
+    /// "How scoring works" sheet background and its row dividers.
+    static let sheetSurface = Color(hex: 0xF8FBFF)
+    static let sheetDivider = Color(hex: 0xDBE5F2)
+}

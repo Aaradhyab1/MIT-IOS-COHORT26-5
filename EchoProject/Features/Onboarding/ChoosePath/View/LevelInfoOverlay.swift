@@ -22,6 +22,7 @@ struct LevelInfoOverlay: View {
                 .padding(.top, EchoSpacing.xs)
                 .padding(.bottom, 28)
             }
+            .scrollBounceBehavior(.basedOnSize)
             .frame(maxHeight: 540)
             .padding(.top, 22)
         }

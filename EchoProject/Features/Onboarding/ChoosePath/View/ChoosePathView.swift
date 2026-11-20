@@ -11,6 +11,28 @@ struct ChoosePathView: View {
     }
 
     var body: some View {
+        // The overlays sit next to the screen in a ZStack (not inside it), so they don't
+        // inherit the space reserved for the bottom buttons.
+        ZStack {
+            mainScreen
+
+            switch vm.overlay {
+            case .customLevel:
+                CustomLevelOverlay(vm: vm)
+                    .transition(.opacity)
+            case .levelInfo:
+                LevelInfoOverlay(levels: vm.levels, onClose: vm.didDismissOverlay)
+                    .transition(.opacity)
+            case nil:
+                EmptyView()
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: vm.overlay)
+        .echoScreenBackground()
+        .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private var mainScreen: some View {
         ScrollView {
             VStack(spacing: 0) {
                 // Figma: "Art · Duo · Waving hello". Multiply hides the art's white backdrop.
@@ -63,21 +85,6 @@ struct ChoosePathView: View {
             .frame(maxWidth: 280)
             .padding(.bottom, 24)
         }
-        .echoScreenBackground()
-        .toolbar(.hidden, for: .navigationBar)
-        .overlay {
-            switch vm.overlay {
-            case .customLevel:
-                CustomLevelOverlay(vm: vm)
-                    .transition(.opacity)
-            case .levelInfo:
-                LevelInfoOverlay(levels: vm.levels, onClose: vm.didDismissOverlay)
-                    .transition(.opacity)
-            case nil:
-                EmptyView()
-            }
-        }
-        .animation(.easeOut(duration: 0.2), value: vm.overlay)
     }
 }
 

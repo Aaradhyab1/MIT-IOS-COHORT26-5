@@ -47,12 +47,9 @@ final class QuickCheckViewModel {
         "Question \(currentIndex + 1) of \(questions.count)"
     }
 
-    /// The segmented control's selection. Setting it records the answer and moves on.
+    /// The answer already chosen for this question (shown selected after going back).
     var currentAnswer: QuickCheckAnswer? {
-        get { currentQuestion.flatMap { answers[$0.id] } }
-        set {
-            if let newValue { didSelect(newValue) }
-        }
+        currentQuestion.flatMap { answers[$0.id] }
     }
 
     func label(for answer: QuickCheckAnswer) -> String {
@@ -69,6 +66,8 @@ final class QuickCheckViewModel {
 
     // MARK: - Actions
 
+    /// Records the answer and moves on. Tapping the answer that is already selected
+    /// (after going back) also moves on, so a parent never has to change it to continue.
     func didSelect(_ answer: QuickCheckAnswer) {
         guard let question = currentQuestion else { return }
         answers[question.id] = answer

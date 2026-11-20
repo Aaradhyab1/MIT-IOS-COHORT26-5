@@ -194,10 +194,24 @@ struct QuickCheckViewModelTests {
     @Test func choosingAnAnswerRecordsIt() {
         let vm = makeViewModel()
 
-        vm.currentAnswer = .sometimes
+        vm.didSelect(.sometimes)
 
         #expect(vm.answers["qc-1"] == .sometimes)
         #expect(vm.currentAnswer == .sometimes)
+    }
+
+    @Test func reTappingTheSameAnswerAfterGoingBackMovesOn() {
+        let vm = makeViewModel()
+        vm.didSelect(.often)
+        vm.goToNextQuestion()
+        vm.didTapBack()
+        #expect(vm.currentAnswer == .often)
+
+        vm.didSelect(.often)        // same answer again
+        vm.goToNextQuestion()       // what the short pause triggers
+
+        #expect(vm.currentIndex == 1)
+        #expect(vm.answers["qc-1"] == .often)
     }
 
     @Test func backGoesToThePreviousQuestionThenLeaves() {
@@ -276,5 +290,22 @@ struct QuickCheckResultViewModelTests {
         #expect(profile.currentProfile()?.recommendedLevel == 3)
         #expect(profile.currentProfile()?.onboardingCompleted == true)
         #expect(router.isOnboardingComplete)
+    }
+}
+
+@MainActor
+struct HowScoringWorksTests {
+    @Test func placementRowsListTheQuestionsForEachLevel() {
+        let profile = InMemoryProfileRepository(result: QuickCheckResult(answers: [:], recommendedLevel: 3))
+        let vm = QuickCheckResultViewModel(router: AppRouter(isOnboardingComplete: false),
+                                           content: InMemoryContentRepository(), profile: profile)
+
+        #expect(vm.placementRows.map(\.value) == ["Questions 1\u{2013}2", "Questions 3\u{2013}4", "Questions 5\u{2013}6", "Questions 7\u{2013}8"])
+        #expect(vm.placementRows.first?.label == "Level 1 \u{00B7} Detection")
+
+        vm.didTapScoringInfo()
+        #expect(vm.isScoringInfoPresented)
+        vm.didCloseScoringInfo()
+        #expect(!vm.isScoringInfoPresented)
     }
 }

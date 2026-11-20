@@ -37,7 +37,8 @@ struct QuickCheckResultView: View {
                         recommendation: recommendation,
                         levelCount: vm.levelCount,
                         revealedStep: vm.revealedStep,
-                        progressDescription: vm.progressDescription
+                        progressDescription: vm.progressDescription,
+                        onInfo: vm.didTapScoringInfo
                     )
                     .padding(.top, 18)
                     .padding(.horizontal, 4)
@@ -64,6 +65,17 @@ struct QuickCheckResultView: View {
         .navigationBarBackButtonHidden()
         .task {
             await vm.didAppear(reduceMotion: reduceMotion)
+        }
+        .sheet(isPresented: $vm.isScoringInfoPresented) {
+            HowScoringWorksSheet(
+                answerValueRows: vm.answerValueRows,
+                placementRows: vm.placementRows,
+                onClose: vm.didCloseScoringInfo
+            )
+            .presentationDetents([.height(500)])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(EchoColor.sheetSurface)
+            .presentationCornerRadius(28)
         }
     }
 }

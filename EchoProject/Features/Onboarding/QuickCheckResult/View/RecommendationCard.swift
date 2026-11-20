@@ -6,12 +6,24 @@ struct RecommendationCard: View {
     let levelCount: Int
     let revealedStep: Int
     let progressDescription: String
+    let onInfo: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
-            Text("Recommended starting level")
-                .echoFont(.body, .semibold)
-                .foregroundStyle(EchoColor.textPrimary)
+            HStack {
+                Text("Recommended starting level")
+                    .echoFont(.body, .semibold)
+                    .foregroundStyle(EchoColor.textPrimary)
+                Spacer()
+                Button("How scoring works", systemImage: "info.circle", action: onInfo)
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 20))
+                    .foregroundStyle(EchoColor.textSecondary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
+                    .padding(-12)   // 44 pt tap target without pushing the layout
+            }
 
             LevelStepRow(levelCount: levelCount, revealedStep: revealedStep)
                 .padding(.horizontal, EchoSpacing.m)

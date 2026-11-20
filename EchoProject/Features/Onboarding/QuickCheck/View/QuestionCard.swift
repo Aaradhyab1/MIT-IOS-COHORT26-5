@@ -1,9 +1,12 @@
 import SwiftUI
 
 /// One Quick Check question: "Question n of 8", the question, a hint or Ling-sound chips,
-/// and the Often / Sometimes / Never segmented control.
+/// and the three answer buttons.
+///
+/// Every card uses the same spacing (12 after the label, 8 under the question, 24 above
+/// the answers) and is as tall as its content, so short questions don't leave a gap.
 struct QuestionCard: View {
-    @Bindable var vm: QuickCheckViewModel
+    let vm: QuickCheckViewModel
     let question: QuickCheckQuestion
 
     var body: some View {
@@ -16,7 +19,7 @@ struct QuestionCard: View {
                 .echoFont(.heading, .semibold)
                 .foregroundStyle(EchoColor.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, EchoSpacing.l)
+                .padding(.top, EchoSpacing.m)
 
             if let hint = question.hint {
                 Text(hint)
@@ -31,19 +34,16 @@ struct QuestionCard: View {
                     .padding(.top, EchoSpacing.l)
             }
 
-            Spacer(minLength: EchoSpacing.xl)
-
-            Picker("Answer", selection: $vm.currentAnswer) {
-                ForEach(QuickCheckAnswer.allCases, id: \.self) { answer in
-                    Text(vm.label(for: answer))
-                        .tag(QuickCheckAnswer?.some(answer))
-                }
-            }
-            .pickerStyle(.segmented)
-            .controlSize(.large)
+            AnswerOptions(
+                options: QuickCheckAnswer.allCases,
+                selected: vm.currentAnswer,
+                label: vm.label(for:),
+                onSelect: vm.didSelect
+            )
+            .padding(.top, 24)
         }
         .padding(23)
-        .frame(maxWidth: .infinity, minHeight: 278, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .echoCard(cornerRadius: 28)
     }
 }

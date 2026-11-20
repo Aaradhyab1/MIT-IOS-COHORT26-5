@@ -49,6 +49,7 @@ struct OnboardingOverlay<Content: View>: View {
                 content()
             }
             .frame(maxWidth: 354)
+            .clipShape(shape)   // scrolling content stays inside the rounded panel
             .background(EchoColor.overlaySheet, in: shape)
             .background(.ultraThinMaterial, in: shape)
             .overlay(shape.stroke(.white.opacity(0.95), lineWidth: 1))

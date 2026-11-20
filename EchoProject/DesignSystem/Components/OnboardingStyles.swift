@@ -33,3 +33,21 @@ extension EchoShadow {
     /// The open dropdown list.
     static let dropdown = EchoShadow(color: Color(hex: 0x0D1F3D, opacity: 0.12), radius: 8, y: 10)
 }
+
+extension EchoColor {
+    /// Quick Check: dots for questions not reached yet (the current one is `accent`).
+    static let progressDot = Color(hex: 0xCFE2F7)
+    /// Result reveal steps: reached, not reached yet, and the final ✓.
+    static let stepReached = Color(hex: 0xBFE2FF)
+    static let stepReachedText = Color(hex: 0x0088FF)
+    static let stepPending = Color(hex: 0xF2F7FD)
+    static let stepPendingText = Color(hex: 0x778AA8)
+    static let stepDone = Color(hex: 0xE0F7E8)
+    static let stepDoneText = Color(hex: 0x14A661)
+    /// Line between result steps that hasn't filled yet.
+    static let stepTrack = Color(hex: 0xDFE6EF)
+    /// Inner panel of a card (the level box on the result screen).
+    static let innerSurface = Color.white.opacity(0.66)
+    /// Tile behind a level's icon.
+    static let symbolTile = Color(hex: 0x0A7CFF, opacity: 0.12)
+}

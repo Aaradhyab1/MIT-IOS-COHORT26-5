@@ -173,3 +173,108 @@ struct ChoosePathViewModelTests {
         #expect(router.onboardingPath.count == 1)
     }
 }
+
+@MainActor
+struct QuickCheckViewModelTests {
+    private func makeViewModel(
+        router: AppRouter = AppRouter(isOnboardingComplete: false),
+        profile: InMemoryProfileRepository = InMemoryProfileRepository()
+    ) -> QuickCheckViewModel {
+        QuickCheckViewModel(router: router, content: InMemoryContentRepository(), profile: profile, advanceDelay: .zero)
+    }
+
+    @Test func startsOnQuestionOneOfEight() {
+        let vm = makeViewModel()
+
+        #expect(vm.questions.count == 8)
+        #expect(vm.questionNumberText == "Question 1 of 8")
+        #expect(vm.currentAnswer == nil)
+    }
+
+    @Test func choosingAnAnswerRecordsIt() {
+        let vm = makeViewModel()
+
+        vm.currentAnswer = .sometimes
+
+        #expect(vm.answers["qc-1"] == .sometimes)
+        #expect(vm.currentAnswer == .sometimes)
+    }
+
+    @Test func backGoesToThePreviousQuestionThenLeaves() {
+        let router = AppRouter(isOnboardingComplete: false)
+        router.go(.choosePath)
+        router.go(.quickCheck)
+        let vm = makeViewModel(router: router)
+        vm.goToNextQuestion()
+
+        vm.didTapBack()
+        #expect(vm.currentIndex == 0)
+
+        vm.didTapBack()
+        #expect(router.onboardingPath.count == 1)
+    }
+
+    @Test func questionSixHasTheLingSoundChips() {
+        let vm = makeViewModel()
+        for _ in 0..<5 { vm.goToNextQuestion() }
+
+        #expect(vm.currentQuestion?.choices == ["M", "AH", "OO", "E", "SH", "S"])
+        vm.didToggleChoice("SH")
+        #expect(vm.isChoiceSelected("SH"))
+    }
+
+    @Test func afterTheLastQuestionTheResultIsSavedAndShown() {
+        let router = AppRouter(isOnboardingComplete: false)
+        let profile = InMemoryProfileRepository()
+        let vm = makeViewModel(router: router, profile: profile)
+
+        for _ in vm.questions {
+            vm.didSelect(.often)
+            vm.goToNextQuestion()
+        }
+
+        #expect(profile.quickCheckResult()?.answers.count == 8)
+        #expect(profile.quickCheckResult()?.recommendedLevel == 3)
+        #expect(router.onboardingPath.count == 1)
+    }
+}
+
+@MainActor
+struct QuickCheckResultViewModelTests {
+    private func makeViewModel(router: AppRouter = AppRouter(isOnboardingComplete: false),
+                               profile: InMemoryProfileRepository) -> QuickCheckResultViewModel {
+        QuickCheckResultViewModel(router: router, content: InMemoryContentRepository(), profile: profile, stepDelay: .zero)
+    }
+
+    @Test func recommendsTheQuickCheckLevel() {
+        let profile = InMemoryProfileRepository(result: QuickCheckResult(answers: [:], recommendedLevel: 3))
+        let vm = makeViewModel(profile: profile)
+
+        #expect(vm.recommendation?.heading == "Level 3 \u{00B7} Identification")
+        #expect(vm.recommendation?.blurb == "Name everyday sounds, animals and voices.")
+        #expect(vm.revealedStep == 1)
+        #expect(!vm.isContinueVisible)
+    }
+
+    @Test func revealCountsUpToTheLevelThenShowsContinue() async {
+        let profile = InMemoryProfileRepository(result: QuickCheckResult(answers: [:], recommendedLevel: 3))
+        let vm = makeViewModel(profile: profile)
+
+        await vm.didAppear(reduceMotion: false)
+
+        #expect(vm.revealedStep == 3)
+        #expect(vm.isContinueVisible)
+    }
+
+    @Test func continueSavesTheLevelAndOpensHome() {
+        let router = AppRouter(isOnboardingComplete: false)
+        let profile = InMemoryProfileRepository(result: QuickCheckResult(answers: [:], recommendedLevel: 3))
+        let vm = makeViewModel(router: router, profile: profile)
+
+        vm.didTapContinue()
+
+        #expect(profile.currentProfile()?.recommendedLevel == 3)
+        #expect(profile.currentProfile()?.onboardingCompleted == true)
+        #expect(router.isOnboardingComplete)
+    }
+}

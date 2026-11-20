@@ -4,14 +4,58 @@ extension DummyData {
 
     // MARK: - Onboarding
 
-    /// The 8 Quick Check questions (answered Often / Sometimes / Never).
-    static let quickCheckQuestions: [QuickCheckQuestion] = (1...8).map { number in
+    /// The 8 Quick Check questions (answered Often / Sometimes / Never), two per level.
+    /// Copy from Figma: Precoding_FINAL › 02 · Onboarding › onboarding-listening-questionnaire.
+    static let quickCheckQuestions: [QuickCheckQuestion] = [
         QuickCheckQuestion(
-            id: "qc-\(number)",
-            text: "TODO(copy) Quick Check question \(number) from PRECODING",
-            levelOrder: (number + 1) / 2            // 1,1,2,2,3,3,4,4: two questions per level
+            id: "qc-1",
+            text: "Does your child react to loud environmental sounds?",
+            levelOrder: 1,
+            hint: "For example, turns their head when a dog barks or a door slams."
+        ),
+        QuickCheckQuestion(
+            id: "qc-2",
+            text: "Can your child detect the six Ling sounds?",
+            levelOrder: 1,
+            hint: "Said at a normal speaking volume: m, ah, oo, ee, sh, s"
+        ),
+        QuickCheckQuestion(
+            id: "qc-3",
+            text: "Can your child hear the difference between two distinct sounds?",
+            levelOrder: 2,
+            hint: "Without seeing your face. For example, a phone ring vs. a dog bark."
+        ),
+        QuickCheckQuestion(
+            id: "qc-4",
+            text: "Can your child notice the difference between similar-sounding words?",
+            levelOrder: 2,
+            hint: "For example, pat, bat and mat."
+        ),
+        QuickCheckQuestion(
+            id: "qc-5",
+            text: "Can your child identify the item linked to a sound?",
+            levelOrder: 3,
+            hint: "For example, hears \u{201C}choo-choo\u{201D} and points to the train."
+        ),
+        QuickCheckQuestion(
+            id: "qc-6",
+            text: "Can your child identify the picture for each Ling sound?",
+            levelOrder: 3,
+            choices: ["M", "AH", "OO", "E", "SH", "S"]
+        ),
+        QuickCheckQuestion(
+            id: "qc-7",
+            text: "Can your child understand and follow 1-step spoken directions?",
+            levelOrder: 4,
+            hint: "Without pointing or gestures. For example, \u{201C}Get your shoes.\u{201D}"
+        ),
+        QuickCheckQuestion(
+            id: "qc-8",
+            text: "Can your child answer basic \u{201C}WH\u{201D} questions?",
+            levelOrder: 4,
+            hint: "Just by listening. For example, \u{201C}Where is the dog?\u{201D}"
         )
-    }
+    ]
 
     /// A child who has finished onboarding, for screens that start past it
     /// (Home, Progress, previews).

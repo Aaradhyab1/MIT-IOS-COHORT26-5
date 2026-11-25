@@ -2,7 +2,6 @@ import SwiftUI
 
 /// Progress tab: streak, sessions and learning paths.
 /// Figma: Precoding_FINAL › Progress_v2 · Revamp › 01 · Overview.
-/// TODO: Build the real layout from Figma. Navigation already works through the ViewModel.
 struct ProgressOverviewView: View {
     @State private var vm: ProgressOverviewViewModel
 
@@ -11,17 +10,35 @@ struct ProgressOverviewView: View {
     }
 
     var body: some View {
-        PlaceholderScreen(title: "Progress", note: "Streak, sessions and learning paths")
-            .safeAreaInset(edge: .bottom) {
-                VStack(spacing: EchoSpacing.m) {
-                Button("Listening progress", action: vm.didTapListening)
-                    .buttonStyle(.echoSecondary)
-                Button("Speaking progress", action: vm.didTapSpeaking)
-                    .buttonStyle(.echoSecondary)
+        ProgressStateView(state: vm.state, retry: vm.didTapRetry) { report in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    WeekStreakCard(week: report.week, streakText: vm.streakText, sessionsText: vm.sessionsText)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        ProgressSectionHeader(title: "Learning paths")
+                        ForEach(report.paths) { path in
+                            Button {
+                                vm.didTapPath(path.track)
+                            } label: {
+                                LearningPathCard(
+                                    path: path,
+                                    levelLine: vm.levelLine(for: path),
+                                    completedLine: vm.completedLine(for: path)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
-                .padding(.horizontal, EchoSpacing.screenHorizontal)
-                .padding(.bottom, EchoSpacing.l)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 32)
             }
+        }
+        .background(ProgressPalette.background.ignoresSafeArea())
+        .navigationTitle("Progress")
+        .task { await vm.load() }
     }
 }
 

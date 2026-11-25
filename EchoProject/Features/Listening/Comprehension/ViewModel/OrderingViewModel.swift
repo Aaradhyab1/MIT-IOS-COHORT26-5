@@ -33,6 +33,9 @@ final class OrderingViewModel {
     private(set) var state: State = .answering
     private(set) var slots: [Slot] = []
     private(set) var pool: [Card] = []
+    private(set) var isShowingTutorial = false
+    private(set) var tutorialStep: ComprehensionTutorial.OrderingStep = .waiting
+    private(set) var tutorialPlaybackID = 0
 
     private let correctOrder: [Card]
     private var attempts = 0
@@ -68,12 +71,58 @@ final class OrderingViewModel {
         state == .answering && slots.allSatisfy { $0.card != nil }
     }
 
+    var tutorialHasStarted: Bool { tutorialStep.hasStarted }
+    var tutorialIsComplete: Bool { tutorialStep.isCompleted }
+    var tutorialCanSkip: Bool { tutorialHasStarted && !tutorialIsComplete }
+    var tutorialHandTarget: String? { tutorialStep.handTarget }
+
+    var tutorialPool: [ComprehensionTutorial.OrderingCard] {
+        let placedIDs = Set(tutorialPlacedIDs)
+        return ComprehensionTutorial.orderingCards.filter { !placedIDs.contains($0.id) }
+    }
+
+    func tutorialCard(forSlot index: Int) -> ComprehensionTutorial.OrderingCard? {
+        guard tutorialPlacedIDs.indices.contains(index) else { return nil }
+        let id = tutorialPlacedIDs[index]
+        return ComprehensionTutorial.orderingCards.first { $0.id == id }
+    }
+
     func mark(for slot: Slot) -> Mark? {
         guard state != .answering, let card = slot.card else { return nil }
         return card.id == correctOrder[slot.number - 1].id ? .correct : .incorrect
     }
 
     // MARK: - User actions
+
+    func didTapHowToPlay() {
+        guard !isShowingTutorial else { return }
+        tutorialPlaybackID += 1
+        tutorialStep = .waiting
+        isShowingTutorial = true
+    }
+
+    func didTapDismissTutorial() {
+        stopTutorialPlayback()
+    }
+
+    func didLeaveTutorial() {
+        stopTutorialPlayback()
+    }
+
+    func playTutorial(reduceMotion: Bool) async {
+        guard isShowingTutorial else { return }
+        let playbackID = tutorialPlaybackID
+
+        if reduceMotion {
+            tutorialStep = .completed
+            return
+        }
+
+        for transition in ComprehensionTutorial.orderingTransitions {
+            guard await waitForTutorialTransition(after: transition.delay, playbackID: playbackID) else { return }
+            tutorialStep = transition.step
+        }
+    }
 
     func didTapPoolCard(_ card: Card) {
         guard state == .answering,
@@ -106,6 +155,28 @@ final class OrderingViewModel {
     }
 
     // MARK: - Private
+
+    private var tutorialPlacedIDs: [String] {
+        let storyOrder = ["seed", "water", "flower"]
+        return Array(storyOrder.prefix(tutorialStep.placedCardCount))
+    }
+
+    private func stopTutorialPlayback() {
+        guard isShowingTutorial else { return }
+        isShowingTutorial = false
+        tutorialPlaybackID += 1
+        tutorialStep = .waiting
+    }
+
+    private func waitForTutorialTransition(after delay: TimeInterval, playbackID: Int) async -> Bool {
+        do {
+            try await Task.sleep(for: .seconds(delay))
+        } catch {
+            return false
+        }
+
+        return !Task.isCancelled && isShowingTutorial && tutorialPlaybackID == playbackID
+    }
 
     private func reset() {
         state = .answering

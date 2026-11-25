@@ -6,6 +6,6 @@ import Foundation
 /// screen only edits files inside their own folder.
 extension AppContainer {
     func makeChildProfileViewModel() -> ChildProfileViewModel {
-        ChildProfileViewModel(router: router)
+        ChildProfileViewModel(router: router, profile: profile)
     }
 }

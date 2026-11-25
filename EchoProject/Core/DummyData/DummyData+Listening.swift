@@ -84,7 +84,22 @@ extension DummyData {
             summary: "Find the hidden animal by its sound",         // TODO(copy)
             collection: "Story Hide & Seek",
             illustration: "ex_hide-and-seek-animal",
-            items: [listenItem("animal-1", sound: "bunny"), listenItem("animal-2", sound: "dog")]
+            items: [
+                ExerciseItem(
+                    id: "animal-1",
+                    prompt: "Did you hear it?",
+                    audio: "snd_cat",
+                    image: "img_cat_happy",
+                    text: "cat"
+                ),
+                ExerciseItem(
+                    id: "animal-2",
+                    prompt: "Did you hear it?",
+                    audio: "snd_dog",
+                    image: "img_dog_happy",
+                    text: "dog"
+                )
+            ]
         ),
         Exercise(
             id: "detection.hide-and-seek.doorbell",

@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "img_duo_waving.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

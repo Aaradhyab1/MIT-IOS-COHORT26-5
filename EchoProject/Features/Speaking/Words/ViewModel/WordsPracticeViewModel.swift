@@ -13,6 +13,9 @@ final class WordsPracticeViewModel {
     static let voiceThreshold = 0.01
     /// Recording stops on its own after this long.
     static let maxRecordingSeconds = 5
+    /// How many words one practice uses. They are picked at random from the
+    /// exercise's word list, so each practice shows a different mix.
+    static let wordsPerSession = 5
 
     private(set) var phase: WordsPracticePhase = .preparing
     private(set) var itemIndex = 0
@@ -42,7 +45,8 @@ final class WordsPracticeViewModel {
         router: AppRouter
     ) {
         self.exerciseId = exerciseId
-        self.items = (content.exercise(id: exerciseId)?.items ?? []).map(WordPracticeItem.init)
+        let allWords = (content.exercise(id: exerciseId)?.items ?? []).map(WordPracticeItem.init)
+        self.items = Array(allWords.shuffled().prefix(Self.wordsPerSession))
         self.recording = recording
         self.speech = speech
         self.voice = voice
@@ -65,6 +69,9 @@ final class WordsPracticeViewModel {
     var hint: String { currentItem?.hint ?? "" }
 
     var isLastItem: Bool { itemIndex >= items.count - 1 }
+
+    /// Number of words in this practice.
+    var wordCount: Int { items.count }
 
     private var acceptedAnswers: [String] { currentItem?.acceptedAnswers ?? [] }
 

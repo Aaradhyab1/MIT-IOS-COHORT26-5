@@ -59,8 +59,8 @@ final class AppContainer {
 
     /// Everything backed by hardcoded data. Used by the app, previews and tests.
     ///
-    /// `liveSpeech: true` swaps in the iPhone's microphone, speech recognition and
-    /// voice for Speaking and the story narration. The data stays hardcoded either way.
+    /// `liveSpeech: true` swaps in the iPhone's microphone, speech recognition,
+    /// sound playback and voice. The data stays hardcoded either way.
     /// Previews and tests leave it off, so they never touch the microphone.
     static func dummy(startPastOnboarding: Bool = false, liveSpeech: Bool = false) -> AppContainer {
         let content = InMemoryContentRepository()
@@ -74,7 +74,7 @@ final class AppContainer {
                 content: content,
                 profile: profile,
                 progress: progress,
-                audio: DummyAudioPlaybackService(),
+                audio: BundleAudioPlaybackService(),
                 recording: LiveRecordingService(),
                 speech: LiveSpeechRecognitionService(),
                 voice: SystemSpeechSynthesisService(),

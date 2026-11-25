@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "img_grass_mound.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

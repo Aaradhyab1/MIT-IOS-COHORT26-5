@@ -22,6 +22,7 @@ struct ListenAndRespondView: View {
             }
             .frame(maxHeight: .infinity, alignment: .top)
         }
+        .onDisappear { vm.stopAll() }
     }
 
     // MARK: - Scene (Figma "Scene / Hidden" and "Scene / Reveal", 362 × 320)

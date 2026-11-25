@@ -87,6 +87,8 @@ extension DummyData {
         ExerciseProgress(exerciseId: "detection.hide-and-seek.animal", completedCount: 10, targetCount: 10, bestOutcome: .greatJob),
         ExerciseProgress(exerciseId: "detection.hide-and-seek.doorbell", completedCount: 3, targetCount: 10, bestOutcome: .almostThere),
         ExerciseProgress(exerciseId: "differentiation.odd-sound-out", completedCount: 1, targetCount: 10, bestOutcome: .greatJob),
+        // Animals in progress, so Home's Today's practice shows "Animals · 4 of 10" as in the prototype.
+        ExerciseProgress(exerciseId: "identification.animals", completedCount: 4, targetCount: 10, bestOutcome: .almostThere),
         ExerciseProgress(exerciseId: "words.three-letter", completedCount: 2, targetCount: 10, bestOutcome: .greatJob)
     ]
 }

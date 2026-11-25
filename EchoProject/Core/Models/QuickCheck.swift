@@ -18,3 +18,4 @@ struct QuickCheckResult: Codable, Hashable {
     var answers: [String: QuickCheckAnswer]     // questionId → answer
     var recommendedLevel: Int                   // hardcoded to 3 for the demo, as in PRECODING
 }
+

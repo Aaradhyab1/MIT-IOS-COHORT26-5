@@ -149,6 +149,7 @@ final class MatchingViewModel {
     var tutorialCanSkip: Bool { !tutorialIsComplete }
     var tutorialShowsHand: Bool { tutorialStep.showsHand }
     var tutorialHandSpot: ComprehensionTutorial.MatchingHandSpot { tutorialStep.handSpot }
+    var tutorialHandIsPressing: Bool { tutorialStep.handIsPressing }
     /// On the last frame every line and dot turns green, as in Figma's checked frame.
     var tutorialIsChecked: Bool { tutorialIsComplete }
 
@@ -264,8 +265,8 @@ final class MatchingViewModel {
         stopTutorialPlayback()
     }
 
-    /// Plays the Figma flow frame by frame. Each wait covers the previous frame's animation
-    /// plus Figma's "after delay", so the pacing matches the prototype.
+    /// Plays the demo step by step. Each wait covers the previous step's animation plus a
+    /// short hold, so every pair moves at the same pace.
     func playTutorial(reduceMotion: Bool) async {
         guard isShowingTutorial else { return }
         let playbackID = tutorialPlaybackID

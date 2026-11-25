@@ -32,88 +32,84 @@ enum ComprehensionTutorial {
         var hasStarted: Bool { self != .waiting }
     }
 
-    /// The frames of the Figma "Instruction animation – question 3 (match the following)" flow,
-    /// Steps 30–41 and "checked · variant2". The hand drags a line from each fruit's dot to its
-    /// colour's dot: banana → yellow, apple → red, grapes → purple.
-    enum MatchingStep: Int, CaseIterable, Equatable {
-        case waiting          // Step 30
-        case touchBanana      // Step 31
-        case dragBanana       // Step 32
-        case reachYellow      // Step 33
-        case releaseBanana    // Step 34
-        case touchApple       // Step 35
-        case reachRed         // Step 36
-        case releaseApple     // Step 37
-        case touchGrapes      // Step 38
-        case dragGrapes       // Step 39
-        case reachPurple      // Step 40
-        case releaseGrapes    // Step 41
-        case completed        // Step 9 · checked · variant2
+    /// The "How to play" demo for Match the following. Every pair plays the same three beats,
+    /// so the rhythm stays even: the finger presses the fruit's dot, drags a line across to
+    /// its colour's dot, then lets go. Pairs play in `matchingPairs` order.
+    enum MatchingStep: Hashable {
+        case waiting
+        /// Finger presses the fruit's dot.
+        case touch(pair: Int)
+        /// Finger has dragged the line across to the colour's dot.
+        case drag(pair: Int)
+        /// Finger lifts off; the pair stays connected.
+        case release(pair: Int)
+        /// All pairs connected and checked.
+        case completed
 
         var isCompleted: Bool { self == .completed }
         var hasStarted: Bool { self != .waiting }
 
-        /// Where the pointing hand is. It keeps moving while it fades, as in Figma's Smart Animate.
+        /// The pair being demonstrated, if any.
+        var pair: Int? {
+            switch self {
+            case .touch(let pair), .drag(let pair), .release(let pair): pair
+            case .waiting, .completed: nil
+            }
+        }
+
         var handSpot: MatchingHandSpot {
             switch self {
             case .waiting: .offscreen
-            case .touchBanana: .bananaDot
-            case .dragBanana: .bananaToYellow
-            case .reachYellow, .releaseBanana: .yellowDot
-            case .touchApple: .appleDot
-            case .reachRed, .releaseApple: .redDot
-            case .touchGrapes: .grapesTile
-            case .dragGrapes: .grapesToPurple
-            case .reachPurple: .purpleTile
-            case .releaseGrapes, .completed: .redDot
+            case .touch(let pair): .fruitDot(pair: pair)
+            case .drag(let pair): .colorDot(pair: pair)
+            case .release(let pair): .liftedFromColorDot(pair: pair)
+            case .completed: .liftedFromColorDot(pair: ComprehensionTutorial.matchingPairs.count - 1)
             }
         }
 
         var showsHand: Bool {
             switch self {
-            case .touchBanana, .dragBanana, .reachYellow,
-                 .touchApple, .reachRed,
-                 .touchGrapes, .dragGrapes, .reachPurple:
-                true
-            case .waiting, .releaseBanana, .releaseApple, .releaseGrapes, .completed:
-                false
+            case .touch, .drag, .release: true
+            case .waiting, .completed: false
+            }
+        }
+
+        /// The finger is pressed down (slightly smaller) while touching and dragging.
+        var handIsPressing: Bool {
+            switch self {
+            case .touch, .drag: true
+            case .waiting, .release, .completed: false
             }
         }
 
         /// How much of each pair's line is drawn, 0...1, in `matchingPairs` order.
         func lineProgress(forPair index: Int) -> Double {
-            switch index {
-            case 0: self == .dragBanana ? 0.5 : (rawValue >= MatchingStep.reachYellow.rawValue ? 1 : 0)
-            case 1: rawValue >= MatchingStep.reachRed.rawValue ? 1 : 0
-            case 2: rawValue >= MatchingStep.reachPurple.rawValue ? 1 : 0
-            default: 0
+            switch self {
+            case .waiting: 0
+            case .completed: 1
+            case .touch(let pair): index < pair ? 1 : 0
+            case .drag(let pair), .release(let pair): index <= pair ? 1 : 0
             }
         }
 
-        /// Cards with a blue outline and a filled dot. Cleared on the final checked frame.
+        /// Cards with a blue outline and a filled dot: every connected pair, the fruit being
+        /// pressed, and the colour once the line reaches it. Cleared on the checked frame.
         var activeItems: Set<String> {
+            guard let current = pair else { return [] }
             var items: Set<String> = []
-            guard self != .completed else { return items }
-            if rawValue >= MatchingStep.touchBanana.rawValue { items.insert("banana") }
-            if rawValue >= MatchingStep.reachYellow.rawValue { items.insert("yellow") }
-            if rawValue >= MatchingStep.touchApple.rawValue { items.insert("apple") }
-            if rawValue >= MatchingStep.reachRed.rawValue { items.insert("red") }
-            if rawValue >= MatchingStep.dragGrapes.rawValue { items.insert("grapes") }
-            if rawValue >= MatchingStep.reachPurple.rawValue { items.insert("purple") }
+            for (index, matching) in ComprehensionTutorial.matchingPairs.enumerated() where index <= current {
+                items.insert(matching.id)
+                if lineProgress(forPair: index) >= 1 { items.insert(matching.colorId) }
+            }
             return items
         }
     }
 
     enum MatchingHandSpot: Equatable {
         case offscreen
-        case bananaDot
-        case bananaToYellow
-        case yellowDot
-        case appleDot
-        case redDot
-        case grapesTile
-        case grapesToPurple
-        case purpleTile
+        case fruitDot(pair: Int)
+        case colorDot(pair: Int)
+        case liftedFromColorDot(pair: Int)
     }
 
     enum OrderingArtwork: String {
@@ -194,24 +190,21 @@ enum ComprehensionTutorial {
         Transition(step: .completed, delay: frameDelay)
     ]
 
-    /// Timings copied from the Figma prototype connections between Steps 30–41 and the checked frame.
-    static let matchingTransitions: [Transition<MatchingStep>] = [
-        Transition(step: .touchBanana, delay: 1.5, duration: 0.48),
-        Transition(step: .dragBanana, delay: 0.75, duration: 0.48),
-        Transition(step: .reachYellow, delay: 0.15, duration: 0.48),
-        Transition(step: .releaseBanana, delay: 0.75, duration: 0.48),
-        Transition(step: .touchApple, delay: 0.75, duration: 0.48),
-        Transition(step: .reachRed, delay: 0.75, duration: 0.48),
-        Transition(step: .releaseApple, delay: 0.75, duration: 0.48),
-        Transition(step: .touchGrapes, delay: 1.2, duration: 0.35),
-        Transition(step: .dragGrapes, delay: 0.75, duration: 0.35),
-        Transition(step: .reachPurple, delay: 0.75, duration: 0.35),
-        Transition(step: .releaseGrapes, delay: 0.75, duration: 0.35),
-        Transition(step: .completed, delay: 1.2, duration: 0.25, curve: .easeOut)
-    ]
+    /// The same timing for every pair: a smooth glide to the fruit, a short hold, one steady
+    /// drag across, then the finger lifts and moves on.
+    static let matchingTransitions: [Transition<MatchingStep>] = {
+        var transitions: [Transition<MatchingStep>] = []
+        for pair in matchingPairs.indices {
+            transitions.append(Transition(step: .touch(pair: pair), delay: pair == 0 ? 0.8 : 0.15, duration: 0.6))
+            transitions.append(Transition(step: .drag(pair: pair), delay: 0.25, duration: 0.9))
+            transitions.append(Transition(step: .release(pair: pair), delay: 0.2, duration: 0.3, curve: .easeOut))
+        }
+        transitions.append(Transition(step: .completed, delay: 0.4, duration: 0.4, curve: .easeOut))
+        return transitions
+    }()
 
-    /// Seconds between entering one matching frame and entering the next: the previous
-    /// animation has to finish before Figma's "after delay" timer starts.
+    /// Seconds between entering one matching step and entering the next: the previous
+    /// animation finishes, then the hold before this one.
     static func matchingPause(before index: Int) -> TimeInterval {
         guard matchingTransitions.indices.contains(index) else { return 0 }
         let previousAnimation = index == 0 ? 0 : matchingTransitions[index - 1].duration

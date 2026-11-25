@@ -202,12 +202,6 @@ private struct MatchingBoard: View {
                             style: StrokeStyle(lineWidth: Layout.matchingLineWidth, lineCap: .round)
                         )
                         .transition(.opacity)
-
-                    if let mark = vm.mark(for: connection) {
-                        MatchBadge(mark: mark)
-                            .position(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
-                            .transition(.scale.combined(with: .opacity))
-                    }
                 }
             }
 
@@ -317,25 +311,6 @@ private struct MatchDot: View {
             .fill(fill)
             .strokeBorder(style == .idle ? ComprehensionColor.matchDotIdleStroke : .white, lineWidth: ComprehensionLayout.matchingDotStroke)
             .frame(width: ComprehensionLayout.matchingDotSize, height: ComprehensionLayout.matchingDotSize)
-    }
-}
-
-/// ✓ or × in the middle of a line after "Check answer".
-private struct MatchBadge: View {
-    let mark: MatchingViewModel.Mark
-
-    var body: some View {
-        Image(systemName: mark == .correct ? "checkmark" : "xmark")
-            .font(.system(size: 11, weight: .heavy))
-            .foregroundStyle(mark == .correct ? ComprehensionColor.matchBadgeCorrect : ComprehensionColor.matchBadgeIncorrect)
-            .frame(width: ComprehensionLayout.matchingBadgeSize, height: ComprehensionLayout.matchingBadgeSize)
-            .background(ComprehensionColor.matchBadgeFill, in: Circle())
-            .overlay(
-                Circle().strokeBorder(
-                    mark == .correct ? ComprehensionColor.matchCorrect : ComprehensionColor.matchIncorrect,
-                    lineWidth: 2
-                )
-            )
     }
 }
 

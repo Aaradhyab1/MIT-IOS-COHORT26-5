@@ -506,19 +506,41 @@ struct ComprehensionTests {
         #expect(vm.matches.isEmpty)
     }
 
-    @Test func matchingTutorialFollowsTheFigmaFlow() {
+    @Test func everyMatchingPairPlaysTheSameTouchDragReleaseBeats() {
         typealias Step = ComprehensionTutorial.MatchingStep
         let steps = ComprehensionTutorial.matchingTransitions.map(\.step)
+        let pairs = ComprehensionTutorial.matchingPairs.indices
 
-        #expect(steps == Array(Step.allCases.dropFirst()))
+        #expect(steps == pairs.flatMap { [Step.touch(pair: $0), .drag(pair: $0), .release(pair: $0)] } + [.completed])
         #expect(Step.waiting.handSpot == .offscreen)
-        #expect(Step.dragBanana.lineProgress(forPair: 0) == 0.5)
-        #expect(Step.reachYellow.lineProgress(forPair: 0) == 1)
-        #expect(Step.releaseApple.lineProgress(forPair: 1) == 1)
-        #expect(Step.releaseApple.lineProgress(forPair: 2) == 0)
-        #expect(Step.reachPurple.lineProgress(forPair: 2) == 1)
-        #expect(Step.reachYellow.activeItems.isSuperset(of: ["banana", "yellow"]))
+        #expect(Step.touch(pair: 1).handSpot == .fruitDot(pair: 1))
+        #expect(Step.drag(pair: 1).handSpot == .colorDot(pair: 1))
+        #expect(Step.touch(pair: 1).handIsPressing)
+        #expect(!Step.release(pair: 1).handIsPressing)
+        #expect(!Step.completed.showsHand)
+    }
+
+    @Test func eachLineIsDrawnInOneDragAndStaysDrawn() {
+        typealias Step = ComprehensionTutorial.MatchingStep
+
+        #expect(Step.touch(pair: 0).lineProgress(forPair: 0) == 0)
+        #expect(Step.drag(pair: 0).lineProgress(forPair: 0) == 1)
+        #expect(Step.touch(pair: 1).lineProgress(forPair: 0) == 1)
+        #expect(Step.touch(pair: 1).lineProgress(forPair: 1) == 0)
+        #expect(Step.release(pair: 2).lineProgress(forPair: 2) == 1)
+        #expect(Step.touch(pair: 0).activeItems == ["banana"])
+        #expect(Step.drag(pair: 0).activeItems == ["banana", "yellow"])
         #expect(Step.completed.activeItems.isEmpty)
+    }
+
+    @Test func everyPairUsesTheSameTiming() {
+        let transitions = ComprehensionTutorial.matchingTransitions
+        let pairCount = ComprehensionTutorial.matchingPairs.count
+        let beats = (0..<pairCount).map { pair in
+            transitions[pair * 3 ..< pair * 3 + 3].map(\.duration)
+        }
+
+        #expect(Set(beats).count == 1)
     }
 
     @Test func matchingTutorialWaitsForEachAnimationPlusItsDelay() {

@@ -315,7 +315,6 @@ private struct ComprehensionMatchingTutorialBoard: View {
                         vm.tutorialIsChecked ? ComprehensionColor.matchCorrect : ComprehensionColor.matchLine,
                         style: StrokeStyle(lineWidth: Layout.matchingTutorialLineWidth, lineCap: .round)
                     )
-                    .opacity(vm.tutorialLineProgress(forPair: index) > 0 ? 1 : 0)
             }
 
             ForEach(pairs.indices, id: \.self) { row in
@@ -329,6 +328,7 @@ private struct ComprehensionMatchingTutorialBoard: View {
                 .resizable()
                 .frame(width: Layout.matchingTutorialHandSize.width, height: Layout.matchingTutorialHandSize.height)
                 .shadow(color: ComprehensionColor.tutorialHandShadow, radius: 2.5, x: 0, y: 3)
+                .scaleEffect(vm.tutorialHandIsPressing ? 0.92 : 1, anchor: handTipAnchor)
                 .position(handCenter)
                 .opacity(vm.tutorialShowsHand ? 1 : 0)
         }
@@ -339,7 +339,7 @@ private struct ComprehensionMatchingTutorialBoard: View {
         .accessibilityLabel("Example: drag a line from each fruit to its colour. Banana to Yellow, Apple to Red, Grapes to Purple.")
     }
 
-    // MARK: - Geometry (Figma Step 30, measured from the board's top-left corner)
+    // MARK: - Geometry (measured from the board's top-left corner)
 
     private func rowCenterY(_ row: Int) -> CGFloat {
         tileHeight / 2 + rowStep * CGFloat(row)
@@ -357,25 +357,27 @@ private struct ComprehensionMatchingTutorialBoard: View {
         colors.firstIndex { $0.id == id } ?? 0
     }
 
-    private func midpoint(_ a: CGPoint, _ b: CGPoint) -> CGPoint {
-        CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+    /// Where the fingertip points. The finger always travels in a straight line from a fruit's
+    /// dot to its colour's dot, with the same curve as the line, so the line grows right
+    /// under the fingertip.
+    private var fingertip: CGPoint {
+        switch vm.tutorialHandSpot {
+        case .offscreen:
+            return CGPoint(x: tileWidth, y: boardHeight + Layout.matchingTutorialHandStartDrop)
+        case .fruitDot(let pair):
+            return leftDot(pair)
+        case .colorDot(let pair):
+            return rightDot(colorRow(pairs[pair].colorId))
+        case .liftedFromColorDot(let pair):
+            let dot = rightDot(colorRow(pairs[pair].colorId))
+            return CGPoint(x: dot.x + 10, y: dot.y + 22)
+        }
     }
 
-    /// Where the fingertip points for each hand spot. The grapes row is demonstrated on the
-    /// cards themselves, 18 pt above the dots, as in Figma Steps 38–40.
-    private var fingertip: CGPoint {
-        let grapesY = rowCenterY(2) - 18
-        switch vm.tutorialHandSpot {
-        case .offscreen: return CGPoint(x: tileWidth, y: boardHeight + Layout.matchingTutorialHandStartDrop)
-        case .bananaDot: return leftDot(0)
-        case .bananaToYellow: return midpoint(leftDot(0), rightDot(colorRow("yellow")))
-        case .yellowDot: return rightDot(colorRow("yellow"))
-        case .appleDot: return leftDot(1)
-        case .redDot: return rightDot(colorRow("red"))
-        case .grapesTile: return CGPoint(x: tileWidth / 2 + 8, y: grapesY)
-        case .grapesToPurple: return CGPoint(x: boardWidth / 2, y: grapesY)
-        case .purpleTile: return CGPoint(x: boardWidth - tileWidth / 2 - 8, y: grapesY)
-        }
+    private var handTipAnchor: UnitPoint {
+        let size = Layout.matchingTutorialHandSize
+        let tip = Layout.matchingTutorialHandTip
+        return UnitPoint(x: tip.x / size.width, y: tip.y / size.height)
     }
 
     private var handCenter: CGPoint {

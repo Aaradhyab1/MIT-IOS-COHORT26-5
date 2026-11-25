@@ -38,9 +38,6 @@ enum ComprehensionColor {
     static let matchDotIdleFill = Color(hex: 0xEDF6FE)
     static let matchDotIdleStroke = Color(hex: 0xBDDBF5)
     static let matchTileHighlight = Color(hex: 0x0573FF)
-    static let matchBadgeFill = Color(hex: 0xF3F8FC)
-    static let matchBadgeCorrect = Color(hex: 0x10233F)
-    static let matchBadgeIncorrect = Color(hex: 0x874812)
 }
 
 enum ComprehensionLayout {
@@ -79,7 +76,6 @@ enum ComprehensionLayout {
     /// Dots sit half over the tile edge, 3.5 pt into the gap.
     static let matchingDotInset: CGFloat = 3.5
     static let matchingLineWidth: CGFloat = 6
-    static let matchingBadgeSize: CGFloat = 24
     static let matchingDotStroke: CGFloat = 3
     static let matchingHighlightStroke: CGFloat = 1.8
     /// Extra room around a card that still counts as dropping on it.

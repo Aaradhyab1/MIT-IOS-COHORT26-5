@@ -12,9 +12,24 @@ struct OrderingQuestionView: View {
     }
 
     var body: some View {
+        Group {
+            if vm.isShowingTutorial {
+                ComprehensionOrderingTutorialView(vm: vm)
+            } else {
+                questionContent
+            }
+        }
+    }
+
+    private var questionContent: some View {
         ScrollView {
             VStack(spacing: 0) {
-                QuestionHeader(title: vm.title, subtitle: vm.subtitle, titleColor: titleColor)
+                QuestionHeader(
+                    title: vm.title,
+                    subtitle: vm.subtitle,
+                    onHowToPlay: vm.didTapHowToPlay,
+                    titleColor: titleColor
+                )
 
                 VStack(spacing: EchoSpacing.m) {
                     ForEach(vm.slots) { slot in

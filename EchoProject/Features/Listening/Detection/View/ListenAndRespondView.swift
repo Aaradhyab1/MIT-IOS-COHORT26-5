@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Detection screen: cloud, speech bubble, then Play / "I heard it" / Next.
+/// Detection screen: speech bubble, the bush the animal hides behind, then Play / "I heard it" / Next.
 /// Layout only; every decision lives in ListenAndRespondViewModel.
 struct ListenAndRespondView: View {
     @State private var vm: ListenAndRespondViewModel
@@ -12,11 +12,11 @@ struct ListenAndRespondView: View {
     var body: some View {
         ExerciseScaffold(title: vm.title, subtitle: vm.subtitle, onBack: vm.backTapped) {
             // Positions below the heading come straight from the Figma frames:
-            // scene at 0, speech bubble at 352, buttons at 472.
+            // speech bubble at 14, bush standing on the hill at 290, buttons at 472.
             ZStack(alignment: .top) {
                 scene
                 bubble
-                    .padding(.top, 352)
+                    .padding(.top, 14)
                 controls
                     .padding(.top, 472)
             }
@@ -25,41 +25,38 @@ struct ListenAndRespondView: View {
         .onDisappear { vm.stopAll() }
     }
 
-    // MARK: - Scene (Figma "Scene / Hidden" and "Scene / Reveal", 362 × 320)
+    // MARK: - Scene (Figma "Hiding spot / Bush")
 
-    @ViewBuilder
+    /// The bush stands on the green hill of the background. It never moves while the
+    /// sound plays, so the child answers from what they heard, not from what they saw.
+    /// After the answer the animal rises up from behind it; on Next it just fades away.
     private var scene: some View {
-        if vm.revealIncludesCloud, let image = vm.revealImage {
-            // "Bunny and cloud (cutout)": one picture with its own cloud, nothing behind it.
-            Image(image)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 340, height: 315)
-                .frame(width: 362, height: 320)
-                .accessibilityLabel(vm.title)
-        } else {
+        ZStack(alignment: .top) {
+            // Clipped just below the bush, so while the animal is still low
+            // it stays hidden behind the bush instead of showing underneath it.
             ZStack(alignment: .top) {
-                Image("img_cloud_shadow")
-                    .padding(.top, 217)
-
                 if let image = vm.revealImage {
-                    // The animal peeks out from behind the cloud.
                     Image(image)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 250, height: 214)
-                        .offset(y: -40)
+                        .frame(width: 170, height: 160, alignment: .bottom)
+                        .padding(.top, 200)
+                        .transition(.asymmetric(
+                            insertion: .offset(y: 120),     // starts hidden behind the bush, rises up
+                            removal: .opacity               // leaves without sliding back down
+                        ))
                         .accessibilityLabel(vm.title)
                 }
-
-                Image("img_cloud")
-                    .padding(.top, vm.revealImage == nil ? 113 : 137)
-                    .accessibilityHidden(true)
             }
-            .frame(width: 362, height: 260, alignment: .top)
-            .padding(.top, 60)
-            .frame(height: 320, alignment: .top)
+            .frame(width: 362, height: 400, alignment: .top)
+            .clipped()
+
+            Image("img_hide_bush")
+                .padding(.top, 290)
+                .accessibilityHidden(true)
         }
+        .frame(width: 362, alignment: .top)
+        .animation(.spring(duration: 0.5, bounce: 0.25), value: vm.revealImage)
     }
 
     // MARK: - Speech bubble (Figma "Encouragement")

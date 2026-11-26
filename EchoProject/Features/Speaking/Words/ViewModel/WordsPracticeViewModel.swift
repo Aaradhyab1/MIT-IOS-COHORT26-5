@@ -75,7 +75,7 @@ final class WordsPracticeViewModel {
 
     private var acceptedAnswers: [String] { currentItem?.acceptedAnswers ?? [] }
 
-    private var spokenSounds: [String] { currentItem?.spokenSounds ?? [] }
+    private var parts: [WordPart] { currentItem?.parts ?? [] }
 
     // MARK: - Screen text
 
@@ -135,8 +135,9 @@ final class WordsPracticeViewModel {
         phase = .listened
     }
 
+    /// "Record" after listening: starts recording straight away, with no extra mic screen.
     func didTapRecord() {
-        phase = .readyToRecord
+        didTapMicrophone()
     }
 
     // MARK: - Recording
@@ -200,29 +201,25 @@ final class WordsPracticeViewModel {
         }
     }
 
-    /// Parent override: speech recognition can miss a child's correct answer.
-    func didTapMarkCorrect() {
-        markCurrentWordCorrect()
-        phase = .result(.correct)
-    }
-
     // MARK: - Pronunciation help
 
     func didTapHearPronunciation() {
         playGuidedHelp()
     }
 
-    /// Says each sound while highlighting its chip, then the whole word, slowly.
+    /// Says the word part by part ("s" … "un") while highlighting each chip,
+    /// then the whole word, slowly.
     func playGuidedHelp() {
         task?.cancel()
         voice.stop()
         phase = .guidedHelp
-        let sounds = spokenSounds
+        let wordParts = self.parts
         task = Task {
-            for (index, sound) in sounds.enumerated() {
+            for (index, part) in wordParts.enumerated() {
                 guard !Task.isCancelled else { return }
                 highlightedSoundIndex = index
-                await voice.speak(sound, slowly: true)
+                await say(part)
+                try? await Task.sleep(for: .milliseconds(250))   // short gap between parts
             }
             highlightedSoundIndex = nil
             guard !Task.isCancelled else { return }
@@ -231,15 +228,25 @@ final class WordsPracticeViewModel {
         }
     }
 
+    /// Tapping a chip says just that part.
     func didTapSound(at index: Int) {
-        guard spokenSounds.indices.contains(index) else { return }
+        guard parts.indices.contains(index) else { return }
         task?.cancel()
         voice.stop()
         highlightedSoundIndex = index
-        let sound = spokenSounds[index]
+        let part = parts[index]
         task = Task {
-            await voice.speak(sound, slowly: true)
+            await say(part)
             highlightedSoundIndex = nil
+        }
+    }
+
+    /// Says one part as it sounds, using its IPA when the content provides one.
+    private func say(_ part: WordPart) async {
+        if let ipa = part.ipa {
+            await voice.speakSound(part.chip.lowercased(), ipa: ipa)
+        } else {
+            await voice.speak(part.chip.lowercased(), slowly: true)
         }
     }
 

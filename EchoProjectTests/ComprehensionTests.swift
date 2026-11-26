@@ -217,13 +217,24 @@ struct ComprehensionTests {
         #expect(vm.canCheck == false)
     }
 
-    @Test func placingCardsInTheRightOrderIsCorrect() {
+    /// Simulates a finger picking up a card and lifting over `target`.
+    private func drag(_ vm: OrderingViewModel, _ id: String, to target: OrderingViewModel.DropTarget?) {
+        let card = (vm.pool + vm.slots.compactMap(\.card)).first { $0.id == id }!
+        vm.didBeginDragging(card)
+        vm.didMoveDrag(over: target)
+        vm.didEndDrag()
+    }
+
+    @Test func draggingCardsIntoTheRightOrderIsCorrect() {
         var finishedFirstTime: Bool?
         let vm = OrderingViewModel(item: orderingItem()) { finishedFirstTime = $0 }
 
-        for id in ["a", "b", "c"] {
-            vm.didTapPoolCard(vm.pool.first { $0.id == id }!)
-        }
+        drag(vm, "a", to: .slot(1))
+        drag(vm, "b", to: .slot(2))
+        drag(vm, "c", to: .slot(3))
+        #expect(vm.pool.isEmpty)
+        #expect(vm.placementRevision == 3)
+
         vm.didTapCheck()
         vm.didTapContinue()
 
@@ -234,7 +245,9 @@ struct ComprehensionTests {
     @Test func aWrongOrderMarksSlotsAndTryAgainResets() {
         let vm = OrderingViewModel(item: orderingItem()) { _ in }
 
-        for card in vm.pool { vm.didTapPoolCard(card) }
+        drag(vm, "b", to: .slot(1))
+        drag(vm, "a", to: .slot(2))
+        drag(vm, "c", to: .slot(3))
         vm.didTapCheck()
 
         #expect(vm.state == .incorrect)
@@ -244,54 +257,397 @@ struct ComprehensionTests {
         vm.didTapTryAgain()
         #expect(vm.state == .answering)
         #expect(vm.pool.count == 3)
+        #expect(!vm.isDragging)
     }
 
-    @Test func tappingAPlacedCardSendsItBack() {
+    @Test func droppingAwayFromAPlaceLeavesTheCardInThePile() {
         let vm = OrderingViewModel(item: orderingItem()) { _ in }
 
-        vm.didTapPoolCard(vm.pool[0])
-        vm.didTapSlot(vm.slots[0])
+        drag(vm, "a", to: nil)
+
+        #expect(vm.pool.count == 3)
+        #expect(vm.slots.allSatisfy { $0.card == nil })
+        #expect(!vm.isDragging)
+    }
+
+    @Test func droppingOnAFilledPlaceSendsTheOldCardBackToThePile() {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+
+        drag(vm, "a", to: .slot(1))
+        drag(vm, "b", to: .slot(1))
+
+        #expect(vm.slots[0].card?.id == "b")
+        #expect(vm.pool.map(\.id).contains("a"))
+    }
+
+    @Test func movingAPlacedCardToAnotherPlaceSwapsThem() {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+        drag(vm, "a", to: .slot(1))
+        drag(vm, "b", to: .slot(2))
+
+        drag(vm, "a", to: .slot(2))
+
+        #expect(vm.slots[0].card?.id == "b")
+        #expect(vm.slots[1].card?.id == "a")
+        #expect(vm.pool.map(\.id) == ["c"])
+    }
+
+    @Test func draggingAPlacedCardToThePileTakesItOut() {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+        drag(vm, "a", to: .slot(1))
+
+        drag(vm, "a", to: .pool)
 
         #expect(vm.slots[0].card == nil)
         #expect(vm.pool.count == 3)
     }
 
+    @Test func theDragShowsWhichPlaceItWillLandIn() {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+        let card = vm.pool[0]
+
+        vm.didBeginDragging(card)
+        vm.didMoveDrag(over: .slot(2))
+
+        #expect(vm.isDragging(card))
+        #expect(vm.isDropTarget(vm.slots[1]))
+        #expect(!vm.isDropTarget(vm.slots[0]))
+
+        vm.didCancelDrag()
+        #expect(!vm.isDragging)
+        #expect(vm.pool.count == 3)
+    }
+
+    @Test func cardsCannotBeMovedAfterChecking() {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+        drag(vm, "a", to: .slot(1))
+        drag(vm, "b", to: .slot(2))
+        drag(vm, "c", to: .slot(3))
+        vm.didTapCheck()
+
+        drag(vm, "a", to: .slot(3))
+
+        #expect(vm.slots.map(\.card?.id) == ["a", "b", "c"])
+    }
+
+    @Test func tapToPlaceFillsTheNextEmptyPlace() {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+        #expect(vm.nextEmptySlotNumber == 1)
+
+        drag(vm, "a", to: .slot(1))
+        #expect(vm.nextEmptySlotNumber == 2)
+
+        drag(vm, "b", to: .slot(3))
+        #expect(vm.nextEmptySlotNumber == 2)
+    }
+
+    @Test func orderingHowToPlayCanBeOpenedAndDismissedWithoutChangingTheAnswer() {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+        let initialPool = vm.pool
+
+        vm.didTapHowToPlay()
+        #expect(vm.isShowingTutorial)
+        #expect(vm.pool == initialPool)
+
+        vm.didTapDismissTutorial()
+        #expect(vm.isShowingTutorial == false)
+        #expect(vm.state == .answering)
+    }
+
+    @Test func orderingTutorialCompletesImmediatelyWhenReduceMotionIsEnabled() async {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+        vm.didTapHowToPlay()
+
+        await vm.playTutorial(reduceMotion: true)
+
+        #expect(vm.tutorialIsComplete)
+        #expect(vm.tutorialCard(forSlot: 0)?.id == "seed")
+        #expect(vm.tutorialCard(forSlot: 1)?.id == "water")
+        #expect(vm.tutorialCard(forSlot: 2)?.id == "flower")
+        #expect(vm.tutorialPool.isEmpty)
+    }
+
+    @Test func skippingOrderingTutorialInvalidatesItsPlayback() async {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+        vm.didTapHowToPlay()
+        let playbackID = vm.tutorialPlaybackID
+        let playback = Task { await vm.playTutorial(reduceMotion: false) }
+
+        playback.cancel()
+        vm.didTapDismissTutorial()
+        await playback.value
+
+        #expect(vm.tutorialPlaybackID > playbackID)
+        #expect(!vm.isShowingTutorial)
+        #expect(vm.tutorialStep == .waiting)
+    }
+
     // MARK: - Matching
 
-    @Test func pairingEveryCharacterCorrectlyIsCorrect() {
+    private typealias Endpoint = MatchingViewModel.Endpoint
+
+    private func makeMatching() -> MatchingViewModel {
         let (question, answers) = matchingItems()
-        let vm = MatchingViewModel(question: question, answers: answers) { _ in }
+        return MatchingViewModel(question: question, answers: answers) { _ in }
+    }
+
+    /// Simulates a finger dragging a line from one card and lifting over another.
+    private func drag(_ vm: MatchingViewModel, from origin: Endpoint, to target: Endpoint?) {
+        vm.didBeginConnecting(from: origin)
+        vm.didMoveConnection(over: target)
+        vm.didEndConnecting()
+    }
+
+    @Test func draggingEveryCharacterToItsActionIsCorrect() {
+        let vm = makeMatching()
 
         for row in vm.rows {
-            vm.didTapLeft(row.left)
-            vm.didTapRight(row.right)
+            drag(vm, from: Endpoint(side: .left, tileId: row.left.id), to: Endpoint(side: .right, tileId: row.right.id))
         }
-        #expect(vm.pairNumber(forRight: vm.rows[1].right) == 2)
+        #expect(vm.connections.count == 2)
+        #expect(vm.canCheck)
 
         vm.didTapCheck()
         #expect(vm.state == .correct)
+        #expect(vm.connections.allSatisfy { vm.mark(for: $0) == .correct })
     }
 
-    @Test func crossedPairsAreIncorrect() {
-        let (question, answers) = matchingItems()
-        let vm = MatchingViewModel(question: question, answers: answers) { _ in }
+    @Test func aLineCanBeDrawnFromEitherSide() {
+        let vm = makeMatching()
 
-        vm.didTapLeft(vm.rows[0].left); vm.didTapRight(vm.rows[1].right)
-        vm.didTapLeft(vm.rows[1].left); vm.didTapRight(vm.rows[0].right)
+        drag(vm, from: Endpoint(side: .right, tileId: "cat"), to: Endpoint(side: .left, tileId: "cat"))
+
+        #expect(vm.matches == ["cat": "cat"])
+    }
+
+    @Test func crossedLinesAreIncorrectAndTryAgainClearsThem() {
+        let vm = makeMatching()
+
+        drag(vm, from: Endpoint(side: .left, tileId: "bird"), to: Endpoint(side: .right, tileId: "cat"))
+        drag(vm, from: Endpoint(side: .left, tileId: "cat"), to: Endpoint(side: .right, tileId: "bird"))
         vm.didTapCheck()
 
         #expect(vm.state == .incorrect)
-        #expect(vm.mark(forLeft: vm.rows[0].left) == .incorrect)
+        #expect(vm.mark(for: Endpoint(side: .left, tileId: "bird")) == .incorrect)
+        #expect(vm.mark(for: Endpoint(side: .right, tileId: "bird")) == .incorrect)
+
+        vm.didTapTryAgain()
+        #expect(vm.state == .answering)
+        #expect(vm.connections.isEmpty)
+    }
+
+    @Test func noMarksAreShownBeforeChecking() {
+        let vm = makeMatching()
+
+        drag(vm, from: Endpoint(side: .left, tileId: "bird"), to: Endpoint(side: .right, tileId: "cat"))
+
+        #expect(vm.mark(for: Endpoint(side: .left, tileId: "bird")) == nil)
     }
 
     @Test func anActionBelongsToOnlyOneCharacter() {
-        let (question, answers) = matchingItems()
-        let vm = MatchingViewModel(question: question, answers: answers) { _ in }
+        let vm = makeMatching()
 
-        vm.didTapLeft(vm.rows[0].left); vm.didTapRight(vm.rows[0].right)
-        vm.didTapLeft(vm.rows[1].left); vm.didTapRight(vm.rows[0].right)
+        drag(vm, from: Endpoint(side: .left, tileId: "bird"), to: Endpoint(side: .right, tileId: "bird"))
+        drag(vm, from: Endpoint(side: .left, tileId: "cat"), to: Endpoint(side: .right, tileId: "bird"))
 
-        #expect(vm.matches.count == 1)
-        #expect(vm.pairNumber(forLeft: vm.rows[0].left) == nil)
+        #expect(vm.matches == ["cat": "bird"])
+        #expect(!vm.isConnected(Endpoint(side: .left, tileId: "bird")))
+    }
+
+    @Test func draggingAConnectedCardMovesItsLine() {
+        let vm = makeMatching()
+        let bird = Endpoint(side: .left, tileId: "bird")
+        drag(vm, from: bird, to: Endpoint(side: .right, tileId: "cat"))
+
+        drag(vm, from: bird, to: Endpoint(side: .right, tileId: "bird"))
+
+        #expect(vm.matches == ["bird": "bird"])
+    }
+
+    @Test func droppingAwayFromACardDrawsNoLine() {
+        let vm = makeMatching()
+        let bird = Endpoint(side: .left, tileId: "bird")
+
+        drag(vm, from: bird, to: nil)
+        #expect(vm.connections.isEmpty)
+
+        drag(vm, from: bird, to: Endpoint(side: .right, tileId: "bird"))
+        drag(vm, from: bird, to: nil)
+        #expect(vm.connections.isEmpty)
+        #expect(!vm.isConnecting)
+    }
+
+    @Test func aCardOnTheSameSideIsNeverATarget() {
+        let vm = makeMatching()
+        let bird = Endpoint(side: .left, tileId: "bird")
+
+        vm.didBeginConnecting(from: bird)
+        vm.didMoveConnection(over: Endpoint(side: .left, tileId: "cat"))
+        #expect(vm.dragTarget == nil)
+        vm.didEndConnecting()
+
+        #expect(vm.connections.isEmpty)
+    }
+
+    @Test func theDragHighlightsTheOriginAndTarget() {
+        let vm = makeMatching()
+        let bird = Endpoint(side: .left, tileId: "bird")
+        let action = Endpoint(side: .right, tileId: "cat")
+
+        vm.didBeginConnecting(from: bird)
+        vm.didMoveConnection(over: action)
+
+        #expect(vm.isConnecting)
+        #expect(vm.isHighlighted(bird))
+        #expect(vm.isHighlighted(action))
+        #expect(!vm.isHighlighted(Endpoint(side: .right, tileId: "bird")))
+    }
+
+    @Test func aCancelledDragConnectsNothing() {
+        let vm = makeMatching()
+
+        vm.didBeginConnecting(from: Endpoint(side: .left, tileId: "bird"))
+        vm.didMoveConnection(over: Endpoint(side: .right, tileId: "bird"))
+        vm.didCancelConnecting()
+
+        #expect(vm.connections.isEmpty)
+        #expect(!vm.isConnecting)
+    }
+
+    @Test func eachConnectionBumpsTheHapticRevision() {
+        let vm = makeMatching()
+
+        drag(vm, from: Endpoint(side: .left, tileId: "bird"), to: Endpoint(side: .right, tileId: "bird"))
+        drag(vm, from: Endpoint(side: .left, tileId: "cat"), to: nil)
+
+        #expect(vm.connectionRevision == 1)
+    }
+
+    @Test func linesCannotBeChangedAfterChecking() {
+        let vm = makeMatching()
+        for row in vm.rows {
+            vm.connect(Endpoint(side: .left, tileId: row.left.id), Endpoint(side: .right, tileId: row.right.id))
+        }
+        vm.didTapCheck()
+
+        drag(vm, from: Endpoint(side: .left, tileId: "bird"), to: Endpoint(side: .right, tileId: "cat"))
+        vm.disconnect(Endpoint(side: .left, tileId: "cat"))
+
+        #expect(vm.matches == ["bird": "bird", "cat": "cat"])
+    }
+
+    @Test func voiceOverCanConnectAndRemoveLines() {
+        let vm = makeMatching()
+        let bird = Endpoint(side: .left, tileId: "bird")
+
+        #expect(vm.candidates(for: bird).map(\.tileId) == ["bird", "cat"])
+        vm.connect(bird, Endpoint(side: .right, tileId: "cat"))
+        #expect(vm.connectedTile(for: bird)?.label == "Chased")
+
+        vm.disconnect(Endpoint(side: .right, tileId: "cat"))
+        #expect(vm.connectedTile(for: bird) == nil)
+    }
+
+    @Test func matchingHowToPlayCanBeOpenedAndDismissedWithoutChangingThePairs() {
+        let vm = makeMatching()
+        vm.connect(Endpoint(side: .left, tileId: "bird"), Endpoint(side: .right, tileId: "bird"))
+
+        vm.didTapHowToPlay()
+        #expect(vm.isShowingTutorial)
+        #expect(!vm.tutorialHasStarted)
+        #expect(vm.tutorialCanSkip)
+
+        vm.didTapDismissTutorial()
+        #expect(vm.isShowingTutorial == false)
+        #expect(vm.state == .answering)
+        #expect(vm.matches == ["bird": "bird"])
+    }
+
+    @Test func noLineCanBeDrawnWhileTheTutorialIsShowing() {
+        let vm = makeMatching()
+        vm.didTapHowToPlay()
+
+        drag(vm, from: Endpoint(side: .left, tileId: "bird"), to: Endpoint(side: .right, tileId: "bird"))
+
+        #expect(vm.connections.isEmpty)
+    }
+
+    @Test func matchingTutorialConnectsAllThreePairsWhenReduceMotionIsEnabled() async {
+        let vm = makeMatching()
+        vm.didTapHowToPlay()
+
+        await vm.playTutorial(reduceMotion: true)
+
+        #expect(vm.tutorialIsComplete)
+        #expect(vm.tutorialIsChecked)
+        #expect(!vm.tutorialCanSkip)
+        #expect(!vm.tutorialShowsHand)
+        for pair in ComprehensionTutorial.matchingPairs.indices {
+            #expect(vm.tutorialPairIsConnected(at: pair))
+        }
+
+        vm.didTapDismissTutorial()
+        #expect(vm.isShowingTutorial == false)
+        #expect(vm.matches.isEmpty)
+    }
+
+    @Test func everyMatchingPairPlaysTheSameTouchDragReleaseBeats() {
+        typealias Step = ComprehensionTutorial.MatchingStep
+        let steps = ComprehensionTutorial.matchingTransitions.map(\.step)
+        let pairs = ComprehensionTutorial.matchingPairs.indices
+
+        #expect(steps == pairs.flatMap { [Step.touch(pair: $0), .drag(pair: $0), .release(pair: $0)] } + [.completed])
+        #expect(Step.waiting.handSpot == .offscreen)
+        #expect(Step.touch(pair: 1).handSpot == .fruitDot(pair: 1))
+        #expect(Step.drag(pair: 1).handSpot == .colorDot(pair: 1))
+        #expect(Step.touch(pair: 1).handIsPressing)
+        #expect(!Step.release(pair: 1).handIsPressing)
+        #expect(!Step.completed.showsHand)
+    }
+
+    @Test func eachLineIsDrawnInOneDragAndStaysDrawn() {
+        typealias Step = ComprehensionTutorial.MatchingStep
+
+        #expect(Step.touch(pair: 0).lineProgress(forPair: 0) == 0)
+        #expect(Step.drag(pair: 0).lineProgress(forPair: 0) == 1)
+        #expect(Step.touch(pair: 1).lineProgress(forPair: 0) == 1)
+        #expect(Step.touch(pair: 1).lineProgress(forPair: 1) == 0)
+        #expect(Step.release(pair: 2).lineProgress(forPair: 2) == 1)
+        #expect(Step.touch(pair: 0).activeItems == ["banana"])
+        #expect(Step.drag(pair: 0).activeItems == ["banana", "yellow"])
+        #expect(Step.completed.activeItems.isEmpty)
+    }
+
+    @Test func everyPairUsesTheSameTiming() {
+        let transitions = ComprehensionTutorial.matchingTransitions
+        let pairCount = ComprehensionTutorial.matchingPairs.count
+        let beats = (0..<pairCount).map { pair in
+            transitions[pair * 3 ..< pair * 3 + 3].map(\.duration)
+        }
+
+        #expect(Set(beats).count == 1)
+    }
+
+    @Test func matchingTutorialWaitsForEachAnimationPlusItsDelay() {
+        let transitions = ComprehensionTutorial.matchingTransitions
+
+        #expect(ComprehensionTutorial.matchingPause(before: 0) == transitions[0].delay)
+        for index in transitions.indices.dropFirst() {
+            let expected = transitions[index - 1].duration + transitions[index].delay
+            #expect(abs(ComprehensionTutorial.matchingPause(before: index) - expected) < 0.0001)
+        }
+        #expect(transitions.last?.curve == .easeOut)
+    }
+
+    @Test func skippingMatchingTutorialInvalidatesItsPlayback() async {
+        let vm = makeMatching()
+        vm.didTapHowToPlay()
+        let playback = Task { await vm.playTutorial(reduceMotion: false) }
+
+        vm.didTapDismissTutorial()
+        await playback.value
+
+        #expect(!vm.isShowingTutorial)
+        #expect(vm.tutorialStep == .waiting)
     }
 }

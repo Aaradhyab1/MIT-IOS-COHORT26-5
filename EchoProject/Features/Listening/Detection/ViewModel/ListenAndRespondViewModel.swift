@@ -22,6 +22,10 @@ final class ListenAndRespondViewModel {
     private(set) var lastAnswerCorrect = false
     private var correctCount = 0
 
+    /// Goes up by one every time Play is tapped. A sound that finishes late
+    /// (after Pause and Play again) sees a different number and is ignored.
+    private var playbackId = 0
+
     private let exerciseId: String
     private let items: [ExerciseItem]
     private let audio: any AudioPlaybackService
@@ -53,7 +57,7 @@ final class ListenAndRespondViewModel {
     }
 
     var subtitle: String? {
-        phase == .reveal && hasSound ? "I was hiding behind the cloud." : nil
+        phase == .reveal && hasSound ? "I was hiding behind the bush." : nil
     }
 
     var bubbleTitle: String? {
@@ -79,7 +83,7 @@ final class ListenAndRespondViewModel {
         }
     }
 
-    /// Picture that pops up on the cloud after the reveal (nil = empty cloud).
+    /// Animal that peeks out from behind the bush after the answer (nil = nothing shown).
     var revealImage: String? {
         guard phase == .reveal, hasSound else { return nil }
         guard !lastAnswerCorrect else { return currentItem?.image }
@@ -91,15 +95,6 @@ final class ListenAndRespondViewModel {
         }
     }
 
-    /// True when the reveal picture already has its own cloud drawn in (img_bunny),
-    /// so the screen must not draw the plain cloud behind it.
-    var revealIncludesCloud: Bool {
-        guard let image = revealImage else { return false }
-        return Self.imagesWithOwnCloud.contains(image)
-    }
-
-    private static let imagesWithOwnCloud: Set<String> = ["img_bunny"]
-
     var roundText: String {
         "\(roundIndex + 1) of \(items.count)"
     }
@@ -109,7 +104,9 @@ final class ListenAndRespondViewModel {
     func playTapped() {
         if phase == .ready {
             phase = .playing
-            Task { await playCurrentSound() }
+            playbackId += 1
+            let id = playbackId
+            Task { await playCurrentSound(id: id) }
         } else if phase == .playing {
             audio.stop()
             phase = .ready
@@ -159,14 +156,14 @@ final class ListenAndRespondViewModel {
         return (currentItem?.image ?? "friend").replacingOccurrences(of: "img_", with: "")
     }
 
-    private func playCurrentSound() async {
+    private func playCurrentSound(id: Int) async {
         if let clip = currentItem?.audio {
             await audio.play(clip)
         } else {
             try? await Task.sleep(for: .seconds(2))     // silent round
         }
-        // Only move on if the parent didn't press Pause meanwhile.
-        if phase == .playing {
+        // Only move on if this is still the latest Play tap and nobody pressed Pause.
+        if id == playbackId && phase == .playing {
             phase = .asking
         }
     }

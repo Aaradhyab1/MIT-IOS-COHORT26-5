@@ -143,7 +143,10 @@ extension DummyData {
             summary: "Which one sounds different?",
             collection: "Which One Sounds Different",
             illustration: "ex_odd-sound-out",
-            items: [oddOneOutItem("odd-1", prompt: "Which one sounds different?", odd: .leo)]
+            items: [
+                oddOneOutItem("odd-1", prompt: "Which one sounds different?", odd: .leo),
+                oddOneOutItem("odd-2", prompt: "Which one sounds different?", odd: .zoe)
+            ]
         ),
         Exercise(
             id: "differentiation.loud-or-soft",

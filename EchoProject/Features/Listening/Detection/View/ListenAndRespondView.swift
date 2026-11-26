@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Detection screen: speech bubble, the bush the animal hides behind, then Play / "I heard it" / Next.
+/// Detection screen: speech bubble, the hiding place (bush or house), then Play / "I heard it" / Next.
 /// Layout only; every decision lives in ListenAndRespondViewModel.
 struct ListenAndRespondView: View {
     @State private var vm: ListenAndRespondViewModel
@@ -12,7 +12,7 @@ struct ListenAndRespondView: View {
     var body: some View {
         ExerciseScaffold(title: vm.title, subtitle: vm.subtitle, onBack: vm.backTapped) {
             // Positions below the heading come straight from the Figma frames:
-            // speech bubble at 14, bush standing on the hill at 290, buttons at 472.
+            // speech bubble at 14, hiding place standing on the hill (ground line at 414), buttons at 472.
             ZStack(alignment: .top) {
                 scene
                 bubble
@@ -25,12 +25,22 @@ struct ListenAndRespondView: View {
         .onDisappear { vm.stopAll() }
     }
 
-    // MARK: - Scene (Figma "Hiding spot / Bush")
+    // MARK: - Scene
+
+    @ViewBuilder
+    private var scene: some View {
+        switch vm.story.hidingSpot {
+        case .bush: bushScene
+        case .house: houseScene
+        }
+    }
+
+    // MARK: Bush (Figma "Hiding spot / Bush")
 
     /// The bush stands on the green hill of the background. It never moves while the
     /// sound plays, so the child answers from what they heard, not from what they saw.
     /// After the answer the animal rises up from behind it; on Next it just fades away.
-    private var scene: some View {
+    private var bushScene: some View {
         ZStack(alignment: .top) {
             // Clipped just below the bush, so while the animal is still low
             // it stays hidden behind the bush instead of showing underneath it.
@@ -57,6 +67,22 @@ struct ListenAndRespondView: View {
         }
         .frame(width: 362, alignment: .top)
         .animation(.spring(duration: 0.5, bounce: 0.25), value: vm.revealImage)
+    }
+
+    // MARK: House (Figma "Hiding spot / Front door")
+
+    /// The house stays the same while the sound plays. After the answer the picture
+    /// cross-fades to the doorbell ringing. On a silent round it stays the same.
+    private var houseScene: some View {
+        ZStack(alignment: .top) {
+            Image(vm.houseImage)
+                .id(vm.houseImage)                  // a new picture fades in over the old one
+                .transition(.opacity)
+                .padding(.top, 174)                 // ground line of the house (240) sits at 414
+                .accessibilityLabel(vm.phase == .reveal ? vm.title : "A house with a doorbell")
+        }
+        .frame(width: 362, alignment: .top)
+        .animation(.easeInOut(duration: 0.35), value: vm.houseImage)
     }
 
     // MARK: - Speech bubble (Figma "Encouragement")
@@ -151,12 +177,13 @@ struct ListenAndRespondView: View {
 /// Uses the real router stack so Next and Try Again work. The leave overlay is drawn by
 /// RootView, so run the app to see it.
 private struct DetectionFlowPreview: View {
+    var exerciseId = "detection.hide-and-seek.animal"
     @State private var container = AppContainer.dummy(startPastOnboarding: true)
 
     var body: some View {
         @Bindable var router = container.router
         NavigationStack(path: $router.listeningPath) {
-            RouteDestinationView(route: .exercise(exerciseId: "detection.hide-and-seek.animal"))
+            RouteDestinationView(route: .exercise(exerciseId: exerciseId))
                 .navigationDestination(for: Route.self) { route in
                     RouteDestinationView(route: route)
                 }
@@ -168,4 +195,8 @@ private struct DetectionFlowPreview: View {
 
 #Preview("Detection · full flow") {
     DetectionFlowPreview()
+}
+
+#Preview("Detection · Hear the Doorbell") {
+    DetectionFlowPreview(exerciseId: "detection.hide-and-seek.doorbell")
 }

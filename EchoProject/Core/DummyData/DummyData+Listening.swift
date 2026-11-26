@@ -16,10 +16,7 @@ extension DummyData {
                 "detection.hide-and-seek.animal",
                 "detection.hide-and-seek.doorbell",
                 "detection.hide-and-seek.clap",
-                "detection.hide-and-seek.drumbeat",
-                "detection.environmental-awareness",
-                "detection.name-alert",
-                "detection.find-the-sound"
+                "detection.hide-and-seek.drumbeat"
             ]
         ),
         Level(
@@ -109,7 +106,11 @@ extension DummyData {
             summary: "Who is at the door?",                         // TODO(copy)
             collection: "Story Hide & Seek",
             illustration: "ex_hide-and-seek-doorbell",
-            items: [listenItem("doorbell-1", sound: "doorbell"), listenItem("doorbell-2", sound: "knock")]
+            items: [
+                listenItem("doorbell-1", sound: "doorbell"),
+                // Silent round: nothing plays, so "I didn't hear it" is the right answer.
+                ExerciseItem(id: "doorbell-2", prompt: "Did you hear it?")
+            ]
         ),
         Exercise(
             id: "detection.hide-and-seek.clap",
@@ -130,33 +131,6 @@ extension DummyData {
             collection: "Story Hide & Seek",
             illustration: "ex_hide-and-seek-drumbeat",
             items: [listenItem("drum-1", sound: "drum"), listenItem("drum-2", sound: "drum-soft")]
-        ),
-        Exercise(
-            id: "detection.environmental-awareness",
-            levelId: "listening.detection",
-            type: .listenAndRespond,
-            title: "Environmental Awareness",
-            summary: "Sounds around the house",                     // TODO(copy)
-            illustration: "ex_environmental-awareness",
-            items: [listenItem("env-1", sound: "tap-water"), listenItem("env-2", sound: "phone-ring")]
-        ),
-        Exercise(
-            id: "detection.name-alert",
-            levelId: "listening.detection",
-            type: .listenAndRespond,
-            title: "Name Alert",
-            summary: "Respond when your name is called",            // TODO(copy)
-            illustration: "ex_name-alert",
-            items: [listenItem("name-1", sound: "name-call")]
-        ),
-        Exercise(
-            id: "detection.find-the-sound",
-            levelId: "listening.detection",
-            type: .listenAndRespond,
-            title: "Find the Sound",
-            summary: "Where is the sound coming from?",             // TODO(copy)
-            illustration: "ex_find-the-sound",
-            items: [listenItem("find-1", sound: "bell")]
         )
     ]
 

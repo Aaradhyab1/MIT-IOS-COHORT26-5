@@ -13,6 +13,8 @@ struct CompletionArtwork {
     var height: CGFloat = 174
     /// Moves the art up, so more of a tall picture shows above the card.
     var lift: CGFloat = 0
+    /// Crops the picture to a circle with a white ring (Differentiation's elephant).
+    var circular = false
 
     static func artwork(exerciseId: String, levelId: String?, outcome: Outcome) -> CompletionArtwork {
         // Exercises whose story has no animals get their own picture.
@@ -37,6 +39,9 @@ struct CompletionArtwork {
             case .almostThere: return CompletionArtwork(images: ["img_dog_worried", "img_cat_worried"])
             case .keepPractising: return CompletionArtwork(images: [])
             }
+        case "listening.differentiation":
+            // Echo with a checklist, in a white ring (Figma "Differentiation / Completion").
+            return CompletionArtwork(images: ["img_elephant_practice"], width: 172, height: 172, lift: 45, circular: true)
         case "listening.comprehension":
             return CompletionArtwork(images: ["img_story-complete"])
         case "speaking.words":

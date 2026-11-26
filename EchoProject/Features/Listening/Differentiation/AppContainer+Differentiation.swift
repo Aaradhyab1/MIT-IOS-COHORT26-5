@@ -6,6 +6,6 @@ import Foundation
 /// screen only edits files inside their own folder.
 extension AppContainer {
     func makeOddOneOutViewModel(exerciseId: String) -> OddOneOutViewModel {
-        OddOneOutViewModel(exerciseId: exerciseId, content: content, progress: progress, router: router)
+        OddOneOutViewModel(exerciseId: exerciseId, content: content, voice: voice, progress: progress, router: router)
     }
 }

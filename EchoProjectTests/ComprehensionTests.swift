@@ -217,13 +217,24 @@ struct ComprehensionTests {
         #expect(vm.canCheck == false)
     }
 
-    @Test func placingCardsInTheRightOrderIsCorrect() {
+    /// Simulates a finger picking up a card and lifting over `target`.
+    private func drag(_ vm: OrderingViewModel, _ id: String, to target: OrderingViewModel.DropTarget?) {
+        let card = (vm.pool + vm.slots.compactMap(\.card)).first { $0.id == id }!
+        vm.didBeginDragging(card)
+        vm.didMoveDrag(over: target)
+        vm.didEndDrag()
+    }
+
+    @Test func draggingCardsIntoTheRightOrderIsCorrect() {
         var finishedFirstTime: Bool?
         let vm = OrderingViewModel(item: orderingItem()) { finishedFirstTime = $0 }
 
-        for id in ["a", "b", "c"] {
-            vm.didTapPoolCard(vm.pool.first { $0.id == id }!)
-        }
+        drag(vm, "a", to: .slot(1))
+        drag(vm, "b", to: .slot(2))
+        drag(vm, "c", to: .slot(3))
+        #expect(vm.pool.isEmpty)
+        #expect(vm.placementRevision == 3)
+
         vm.didTapCheck()
         vm.didTapContinue()
 
@@ -234,7 +245,9 @@ struct ComprehensionTests {
     @Test func aWrongOrderMarksSlotsAndTryAgainResets() {
         let vm = OrderingViewModel(item: orderingItem()) { _ in }
 
-        for card in vm.pool { vm.didTapPoolCard(card) }
+        drag(vm, "b", to: .slot(1))
+        drag(vm, "a", to: .slot(2))
+        drag(vm, "c", to: .slot(3))
         vm.didTapCheck()
 
         #expect(vm.state == .incorrect)
@@ -244,16 +257,88 @@ struct ComprehensionTests {
         vm.didTapTryAgain()
         #expect(vm.state == .answering)
         #expect(vm.pool.count == 3)
+        #expect(!vm.isDragging)
     }
 
-    @Test func tappingAPlacedCardSendsItBack() {
+    @Test func droppingAwayFromAPlaceLeavesTheCardInThePile() {
         let vm = OrderingViewModel(item: orderingItem()) { _ in }
 
-        vm.didTapPoolCard(vm.pool[0])
-        vm.didTapSlot(vm.slots[0])
+        drag(vm, "a", to: nil)
+
+        #expect(vm.pool.count == 3)
+        #expect(vm.slots.allSatisfy { $0.card == nil })
+        #expect(!vm.isDragging)
+    }
+
+    @Test func droppingOnAFilledPlaceSendsTheOldCardBackToThePile() {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+
+        drag(vm, "a", to: .slot(1))
+        drag(vm, "b", to: .slot(1))
+
+        #expect(vm.slots[0].card?.id == "b")
+        #expect(vm.pool.map(\.id).contains("a"))
+    }
+
+    @Test func movingAPlacedCardToAnotherPlaceSwapsThem() {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+        drag(vm, "a", to: .slot(1))
+        drag(vm, "b", to: .slot(2))
+
+        drag(vm, "a", to: .slot(2))
+
+        #expect(vm.slots[0].card?.id == "b")
+        #expect(vm.slots[1].card?.id == "a")
+        #expect(vm.pool.map(\.id) == ["c"])
+    }
+
+    @Test func draggingAPlacedCardToThePileTakesItOut() {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+        drag(vm, "a", to: .slot(1))
+
+        drag(vm, "a", to: .pool)
 
         #expect(vm.slots[0].card == nil)
         #expect(vm.pool.count == 3)
+    }
+
+    @Test func theDragShowsWhichPlaceItWillLandIn() {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+        let card = vm.pool[0]
+
+        vm.didBeginDragging(card)
+        vm.didMoveDrag(over: .slot(2))
+
+        #expect(vm.isDragging(card))
+        #expect(vm.isDropTarget(vm.slots[1]))
+        #expect(!vm.isDropTarget(vm.slots[0]))
+
+        vm.didCancelDrag()
+        #expect(!vm.isDragging)
+        #expect(vm.pool.count == 3)
+    }
+
+    @Test func cardsCannotBeMovedAfterChecking() {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+        drag(vm, "a", to: .slot(1))
+        drag(vm, "b", to: .slot(2))
+        drag(vm, "c", to: .slot(3))
+        vm.didTapCheck()
+
+        drag(vm, "a", to: .slot(3))
+
+        #expect(vm.slots.map(\.card?.id) == ["a", "b", "c"])
+    }
+
+    @Test func tapToPlaceFillsTheNextEmptyPlace() {
+        let vm = OrderingViewModel(item: orderingItem()) { _ in }
+        #expect(vm.nextEmptySlotNumber == 1)
+
+        drag(vm, "a", to: .slot(1))
+        #expect(vm.nextEmptySlotNumber == 2)
+
+        drag(vm, "b", to: .slot(3))
+        #expect(vm.nextEmptySlotNumber == 2)
     }
 
     @Test func orderingHowToPlayCanBeOpenedAndDismissedWithoutChangingTheAnswer() {

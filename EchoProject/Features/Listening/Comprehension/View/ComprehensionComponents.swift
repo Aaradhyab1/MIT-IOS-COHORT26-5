@@ -6,11 +6,14 @@ enum ComprehensionColor {
     static let correctFill = Color(hex: 0xEAF8EF, opacity: 0.92)
     static let incorrectFill = Color(hex: 0xFDEEEF, opacity: 0.92)
 
-    static let slotFill = Color.white.opacity(0.4)
-    static let slotStroke = Color.white.opacity(0.85)
+    static let slotFill = Color(hex: 0xF4F8FC, opacity: 0.7)
+    static let slotStroke = Color(hex: 0xB9CCE0)
     static let slotBadge = Color(hex: 0xA1CCEB, opacity: 0.5)
-    static let cardFill = Color.white.opacity(0.6)
-    static let cardStroke = Color.white.opacity(0.96)
+    static let cardFill = Color.white.opacity(0.92)
+    static let cardStroke = Color(hex: 0xDCE6F0)
+    /// The numbered place a dragged card is hovering over.
+    static let slotTargetFill = Color(hex: 0xEAF3FF)
+    static let slotTargetStroke = Color(hex: 0x0A7AFF, opacity: 0.55)
     static let dragHandle = Color(hex: 0x618CA3, opacity: 0.58)
 
     static let tileFill = Color(hex: 0xE3F7FF, opacity: 0.52)

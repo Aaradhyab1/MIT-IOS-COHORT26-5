@@ -17,9 +17,15 @@ struct SpeakingTests {
         #expect(PronunciationScorer.editDistance("", "cat") == 3)
     }
 
-    @Test func exactWordIsCorrectEvenWithExtraWords() {
+    @Test func justTheWordIsCorrect() {
         #expect(PronunciationScorer.judge(heard: "Sun", accepted: ["sun"]) == .correct)
-        #expect(PronunciationScorer.judge(heard: "it's a sun", accepted: ["sun"]) == .correct)
+        #expect(PronunciationScorer.judge(heard: "Sun.", accepted: ["sun"]) == .correct)
+    }
+
+    @Test func sentenceContainingTheWordIsIncorrect() {
+        #expect(PronunciationScorer.judge(heard: "it's a sun", accepted: ["sun"]) == .incorrect)
+        #expect(PronunciationScorer.judge(heard: "sun sun", accepted: ["sun"]) == .incorrect)
+        #expect(PronunciationScorer.judge(heard: "I like the sun", accepted: ["sun", "son"]) == .incorrect)
     }
 
     @Test func nearMissIsClose() {
@@ -33,23 +39,30 @@ struct SpeakingTests {
 
     // MARK: - Words model
 
-    @Test func wordItemReadsChipsHintAndSpokenSounds() {
+    @Test func wordItemReadsPartsHintAndAnswers() {
         let item = WordPracticeItem(ExerciseItem(
             id: "word-sun", text: "Sun",
-            options: [Option(id: "0", label: "S"), Option(id: "1", label: "U"), Option(id: "2", label: "N")],
-            hint: "sss · uh · nnn → sun", acceptedAnswers: ["sun", "son"]
+            options: [Option(id: "0", label: "S", pronunciation: "s"),
+                      Option(id: "1", label: "UN", pronunciation: "ʌn")],
+            hint: "s · un → sun", acceptedAnswers: ["sun", "son"]
         ))
         #expect(item.word == "Sun")
-        #expect(item.soundChips == ["S", "U", "N"])
-        #expect(item.spokenSounds == ["sss", "uh", "nnn"])
+        #expect(item.soundChips == ["S", "UN"])
+        #expect(item.parts == [WordPart(chip: "S", ipa: "s"), WordPart(chip: "UN", ipa: "ʌn")])
         #expect(item.acceptedAnswers == ["sun", "son"])
     }
 
-    @Test func wordItemWithoutHintSpeaksTheChips() {
-        let item = WordPracticeItem(ExerciseItem(id: "word-up", text: "Up",
-                                                 options: [Option(id: "0", label: "U"), Option(id: "1", label: "P")]))
-        #expect(item.spokenSounds == ["u", "p"])
-        #expect(item.acceptedAnswers == ["Up"])
+    @Test func everyWordIsBrokenIntoPartsWithSounds() {
+        let content = InMemoryContentRepository()
+        for id in ["words.two-letter", "words.three-letter", "words.four-letter", "words.five-plus-letter"] {
+            for item in content.exercise(id: id)?.items ?? [] {
+                let word = WordPracticeItem(item)
+                #expect(word.parts.count >= 2, "\(word.word) needs at least two parts")
+                #expect(word.parts.allSatisfy { $0.ipa != nil }, "\(word.word) has a part without a sound")
+                // The parts spell the word: "S" + "UN" = "SUN".
+                #expect(word.soundChips.joined() == word.word.uppercased(), "\(word.word) parts don't spell it")
+            }
+        }
     }
 
     // MARK: - ViewModels
@@ -115,11 +128,13 @@ struct SpeakingTests {
         #expect(vm.phase == .unavailable)
     }
 
-    @Test func parentCanMarkAWordCorrect() async {
+    @Test func recordStartsRecordingStraightAway() async throws {
         let container = AppContainer.dummy(startPastOnboarding: true)
         let vm = container.makeWordsPracticeViewModel(exerciseId: "words.three-letter")
         await vm.onAppear()
-        vm.didTapMarkCorrect()
-        #expect(vm.phase == .result(.correct))
+        vm.didTapRecord()
+        try await Task.sleep(for: .milliseconds(100))   // permission checks run first
+        #expect(vm.phase == .recording)
+        vm.stopAll()
     }
 }

@@ -9,6 +9,10 @@ import AVFoundation
 @MainActor
 protocol SpeechSynthesisService: AnyObject {
     func speak(_ text: String, slowly: Bool) async
+    /// Says one part of a word as it sounds, from its IPA spelling ("ʌn" for "un"),
+    /// so "s" comes out as "sss" and not the letter name "ess". `text` is what the
+    /// voice falls back to if it can't read the IPA.
+    func speakSound(_ text: String, ipa: String) async
     func stop()
 }
 
@@ -25,12 +29,25 @@ final class SystemSpeechSynthesisService: NSObject, SpeechSynthesisService, AVSp
     }
 
     func speak(_ text: String, slowly: Bool) async {
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.rate = slowly ? 0.3 : 0.42     // 0.5 is normal speed; children need it slower
+        await say(utterance)
+    }
+
+    func speakSound(_ text: String, ipa: String) async {
+        // The IPA attribute tells the voice exactly which sounds to make for this text.
+        let ipaKey = NSAttributedString.Key(rawValue: AVSpeechSynthesisIPANotationAttribute)
+        let sound = NSAttributedString(string: text, attributes: [ipaKey: ipa])
+        let utterance = AVSpeechUtterance(attributedString: sound)
+        utterance.rate = 0.3
+        await say(utterance)
+    }
+
+    /// Speaks one utterance with the US English voice and returns when it has finished.
+    private func say(_ utterance: AVSpeechUtterance) async {
         stop()
         EchoAudioSession.activate()
-
-        let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-        utterance.rate = slowly ? 0.3 : 0.42     // 0.5 is normal speed; children need it slower
         currentUtterance = utterance
 
         await withCheckedContinuation { continuation in
@@ -77,6 +94,10 @@ final class SystemSpeechSynthesisService: NSObject, SpeechSynthesisService, AVSp
 final class DummySpeechSynthesisService: SpeechSynthesisService {
     func speak(_ text: String, slowly: Bool) async {
         try? await Task.sleep(for: .milliseconds(slowly ? 900 : 600))
+    }
+
+    func speakSound(_ text: String, ipa: String) async {
+        try? await Task.sleep(for: .milliseconds(700))
     }
 
     func stop() {}

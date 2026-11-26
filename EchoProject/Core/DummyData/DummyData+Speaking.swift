@@ -80,18 +80,18 @@ extension DummyData {
             title: "2 letter", summary: "Short words to start",                     // TODO(copy)
             illustration: "ex_words-2",
             items: [
-                wordItem("Up", sounds: ["U", "P"], hint: "uh · p → up"),
-                wordItem("Go", sounds: ["G", "O"], hint: "g · oh → go"),
-                wordItem("No", sounds: ["N", "O"], hint: "n · oh → no", accepted: ["no", "know"]),
-                wordItem("Me", sounds: ["M", "E"], hint: "m · ee → me"),
-                wordItem("We", sounds: ["W", "E"], hint: "w · ee → we", accepted: ["we", "wee"]),
-                wordItem("Hi", sounds: ["H", "I"], hint: "h · eye → hi", accepted: ["hi", "high"]),
-                wordItem("Be", sounds: ["B", "E"], hint: "b · ee → be", accepted: ["be", "bee"]),
-                wordItem("In", sounds: ["I", "N"], hint: "i · n → in", accepted: ["in", "inn"]),
-                wordItem("On", sounds: ["O", "N"], hint: "o · n → on"),
-                wordItem("At", sounds: ["A", "T"], hint: "a · t → at"),
-                wordItem("It", sounds: ["I", "T"], hint: "i · t → it"),
-                wordItem("Is", sounds: ["I", "S"], hint: "i · z → is")
+                wordItem("Up", parts: [("U", "ʌ"), ("P", "p")]),
+                wordItem("Go", parts: [("G", "ɡ"), ("O", "oʊ")]),
+                wordItem("No", parts: [("N", "n"), ("O", "oʊ")], accepted: ["no", "know"]),
+                wordItem("Me", parts: [("M", "m"), ("E", "i")]),
+                wordItem("We", parts: [("W", "w"), ("E", "i")], accepted: ["we", "wee"]),
+                wordItem("Hi", parts: [("H", "h"), ("I", "aɪ")], accepted: ["hi", "high"]),
+                wordItem("Be", parts: [("B", "b"), ("E", "i")], accepted: ["be", "bee"]),
+                wordItem("In", parts: [("I", "ɪ"), ("N", "n")], accepted: ["in", "inn"]),
+                wordItem("On", parts: [("O", "ɑ"), ("N", "n")]),
+                wordItem("At", parts: [("A", "æ"), ("T", "t")]),
+                wordItem("It", parts: [("I", "ɪ"), ("T", "t")]),
+                wordItem("Is", parts: [("I", "ɪ"), ("S", "z")])
             ]
         ),
         Exercise(
@@ -99,18 +99,18 @@ extension DummyData {
             title: "3 letter", summary: "Words like Sun",                           // TODO(copy)
             illustration: "ex_words-3",
             items: [
-                wordItem("Sun", sounds: ["S", "U", "N"], hint: "sss · uh · nnn → sun", accepted: ["sun", "son"]),
-                wordItem("Cat", sounds: ["C", "A", "T"], hint: "k · a · t → cat"),
-                wordItem("Dog", sounds: ["D", "O", "G"], hint: "d · o · g → dog"),
-                wordItem("Hat", sounds: ["H", "A", "T"], hint: "h · a · t → hat"),
-                wordItem("Bus", sounds: ["B", "U", "S"], hint: "b · uh · sss → bus"),
-                wordItem("Cup", sounds: ["C", "U", "P"], hint: "k · uh · p → cup"),
-                wordItem("Pig", sounds: ["P", "I", "G"], hint: "p · i · g → pig"),
-                wordItem("Bed", sounds: ["B", "E", "D"], hint: "b · e · d → bed"),
-                wordItem("Red", sounds: ["R", "E", "D"], hint: "r · e · d → red", accepted: ["red", "read"]),
-                wordItem("Box", sounds: ["B", "O", "X"], hint: "b · o · ks → box"),
-                wordItem("Fan", sounds: ["F", "A", "N"], hint: "f · a · n → fan"),
-                wordItem("Map", sounds: ["M", "A", "P"], hint: "m · a · p → map")
+                wordItem("Sun", parts: [("S", "s"), ("UN", "ʌn")], accepted: ["sun", "son"]),
+                wordItem("Cat", parts: [("C", "k"), ("AT", "æt")]),
+                wordItem("Dog", parts: [("D", "d"), ("OG", "ɔɡ")]),
+                wordItem("Hat", parts: [("H", "h"), ("AT", "æt")]),
+                wordItem("Bus", parts: [("B", "b"), ("US", "ʌs")]),
+                wordItem("Cup", parts: [("C", "k"), ("UP", "ʌp")]),
+                wordItem("Pig", parts: [("P", "p"), ("IG", "ɪɡ")]),
+                wordItem("Bed", parts: [("B", "b"), ("ED", "ɛd")]),
+                wordItem("Red", parts: [("R", "ɹ"), ("ED", "ɛd")], accepted: ["red", "read"]),
+                wordItem("Box", parts: [("B", "b"), ("OX", "ɑks")]),
+                wordItem("Fan", parts: [("F", "f"), ("AN", "æn")]),
+                wordItem("Map", parts: [("M", "m"), ("AP", "æp")])
             ]
         ),
         Exercise(
@@ -118,18 +118,18 @@ extension DummyData {
             title: "4 letter", summary: "Words like Ball",                          // TODO(copy)
             illustration: "ex_words-4",
             items: [
-                wordItem("Ball", sounds: ["B", "A", "LL"], hint: "b · aw · l → ball"),
-                wordItem("Fish", sounds: ["F", "I", "SH"], hint: "f · i · sh → fish"),
-                wordItem("Duck", sounds: ["D", "U", "CK"], hint: "d · uh · k → duck"),
-                wordItem("Milk", sounds: ["M", "I", "L", "K"], hint: "m · i · l · k → milk"),
-                wordItem("Frog", sounds: ["F", "R", "O", "G"], hint: "f · r · o · g → frog"),
-                wordItem("Book", sounds: ["B", "OO", "K"], hint: "b · oo · k → book"),
-                wordItem("Cake", sounds: ["C", "A", "KE"], hint: "k · ay · k → cake"),
-                wordItem("Tree", sounds: ["T", "R", "EE"], hint: "t · r · ee → tree"),
-                wordItem("Bird", sounds: ["B", "IR", "D"], hint: "b · er · d → bird"),
-                wordItem("Lion", sounds: ["L", "I", "ON"], hint: "l · eye · un → lion"),
-                wordItem("Moon", sounds: ["M", "OO", "N"], hint: "m · oo · n → moon"),
-                wordItem("Star", sounds: ["S", "T", "AR"], hint: "s · t · ar → star")
+                wordItem("Ball", parts: [("B", "b"), ("ALL", "ɔl")]),
+                wordItem("Fish", parts: [("F", "f"), ("ISH", "ɪʃ")]),
+                wordItem("Duck", parts: [("D", "d"), ("UCK", "ʌk")]),
+                wordItem("Milk", parts: [("M", "m"), ("ILK", "ɪlk")]),
+                wordItem("Frog", parts: [("FR", "fɹ"), ("OG", "ɑɡ")]),
+                wordItem("Book", parts: [("B", "b"), ("OOK", "ʊk")]),
+                wordItem("Cake", parts: [("C", "k"), ("AKE", "eɪk")]),
+                wordItem("Tree", parts: [("TR", "tɹ"), ("EE", "i")]),
+                wordItem("Bird", parts: [("B", "b"), ("IRD", "ɝd")]),
+                wordItem("Lion", parts: [("LI", "laɪ"), ("ON", "ən")]),
+                wordItem("Moon", parts: [("M", "m"), ("OON", "un")]),
+                wordItem("Star", parts: [("ST", "st"), ("AR", "ɑɹ")])
             ]
         ),
         Exercise(
@@ -137,18 +137,18 @@ extension DummyData {
             title: "5 letter & more", summary: "Longer words",                      // TODO(copy)
             illustration: "ex_words-5",
             items: [
-                wordItem("Apple", sounds: ["A", "PP", "LE"], hint: "a · p · ul → apple"),
-                wordItem("Tiger", sounds: ["T", "I", "G", "ER"], hint: "t · eye · g · er → tiger"),
-                wordItem("Water", sounds: ["W", "A", "T", "ER"], hint: "w · aw · t · er → water"),
-                wordItem("House", sounds: ["H", "OU", "SE"], hint: "h · ow · s → house"),
-                wordItem("Happy", sounds: ["H", "A", "PP", "Y"], hint: "h · a · p · ee → happy"),
-                wordItem("Pencil", sounds: ["P", "E", "N", "C", "IL"], hint: "p · e · n · s · ul → pencil"),
-                wordItem("Banana", sounds: ["B", "A", "N", "A", "N", "A"], hint: "b · uh · n · ah · n · uh → banana"),
-                wordItem("Rabbit", sounds: ["R", "A", "BB", "I", "T"], hint: "r · a · b · i · t → rabbit"),
-                wordItem("Flower", sounds: ["F", "L", "OW", "ER"], hint: "f · l · ow · er → flower", accepted: ["flower", "flour"]),
-                wordItem("Monkey", sounds: ["M", "O", "N", "K", "EY"], hint: "m · uh · n · k · ee → monkey"),
-                wordItem("Orange", sounds: ["OR", "A", "N", "GE"], hint: "or · i · n · j → orange"),
-                wordItem("Window", sounds: ["W", "I", "N", "D", "OW"], hint: "w · i · n · d · oh → window")
+                wordItem("Apple", parts: [("AP", "æp"), ("PLE", "pəl")]),
+                wordItem("Tiger", parts: [("TI", "taɪ"), ("GER", "ɡɚ")]),
+                wordItem("Water", parts: [("WA", "wɔ"), ("TER", "tɚ")]),
+                wordItem("House", parts: [("H", "h"), ("OUSE", "aʊs")]),
+                wordItem("Happy", parts: [("HAP", "hæp"), ("PY", "pi")]),
+                wordItem("Pencil", parts: [("PEN", "pɛn"), ("CIL", "səl")]),
+                wordItem("Banana", parts: [("BA", "bə"), ("NA", "næ"), ("NA", "nə")]),
+                wordItem("Rabbit", parts: [("RAB", "ɹæb"), ("BIT", "bɪt")]),
+                wordItem("Flower", parts: [("FLOW", "flaʊ"), ("ER", "ɚ")], accepted: ["flower", "flour"]),
+                wordItem("Monkey", parts: [("MON", "mʌŋ"), ("KEY", "ki")]),
+                wordItem("Orange", parts: [("OR", "ɔɹ"), ("ANGE", "ɪndʒ")]),
+                wordItem("Window", parts: [("WIN", "wɪn"), ("DOW", "doʊ")])
             ]
         ),
 
@@ -184,17 +184,25 @@ extension DummyData {
 
     // MARK: - Builders
 
-    /// A word to say, with its sound chips ("S", "U", "N") and how-to-say-it hint.
+    /// A word to say, broken into parts for pronunciation help.
+    ///
+    /// Each part is (chip text, IPA sound): syllables for longer words ("AP" + "PLE"),
+    /// first sound + the rest for short words ("S" + "UN"). The IPA makes the voice say the
+    /// sound itself ("sss"), not the letter name ("ess"). The hint shown to the parent,
+    /// e.g. "s · un → sun", is built from the chips.
     /// `accepted` lists what counts as said right; it defaults to the word itself.
-    private static func wordItem(_ word: String, sounds: [String], hint: String, accepted: [String]? = nil) -> ExerciseItem {
+    private static func wordItem(_ word: String, parts: [(chip: String, ipa: String)], accepted: [String]? = nil) -> ExerciseItem {
         let id = word.lowercased()
+        let hint = parts.map { $0.chip.lowercased() }.joined(separator: " · ") + " → " + id
         return ExerciseItem(
             id: "word-\(id)",
             prompt: "Listen, then say the word",
             audio: "snd_word-\(id)",
             image: "img_word-\(id)",
             text: word,
-            options: sounds.enumerated().map { Option(id: "\(id)-\($0.offset)", label: $0.element) },
+            options: parts.enumerated().map { index, part in
+                Option(id: "\(id)-\(index)", label: part.chip, pronunciation: part.ipa)
+            },
             hint: hint,
             acceptedAnswers: accepted ?? [id]
         )

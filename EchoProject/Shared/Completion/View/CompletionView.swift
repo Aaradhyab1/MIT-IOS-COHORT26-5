@@ -49,9 +49,10 @@ struct CompletionView: View {
                     Image(name)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 170, height: 174)
+                        .frame(width: vm.artwork.width, height: vm.artwork.height)
                 }
             }
+            .offset(y: -vm.artwork.lift)
             .accessibilityHidden(true)
         }
     }

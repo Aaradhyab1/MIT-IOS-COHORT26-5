@@ -175,6 +175,7 @@ private struct ComprehensionOrderingTutorialBoard: View {
             showsHand: vm.tutorialHandTarget == card.id
         )
         .matchedGeometryEffect(id: card.id, in: namespace)
+        .zIndex(vm.tutorialHandTarget == card.id ? 1 : 0)
     }
 }
 
@@ -250,10 +251,10 @@ private struct OrderingTutorialCard: View {
         .frame(maxWidth: .infinity, minHeight: ComprehensionLayout.orderingRowHeight)
         .background(ComprehensionColor.cardFill, in: .rect(cornerRadius: 20))
         .overlay(RoundedRectangle(cornerRadius: 20).stroke(ComprehensionColor.cardStroke, lineWidth: 1))
-        .overlay(alignment: .bottomLeading) {
+        .overlay(alignment: .topLeading) {
             if showsHand {
                 ComprehensionTutorialHand()
-                    .offset(x: 8, y: 25)
+                    .offset(x: 12, y: 33)
             }
         }
         .accessibilityElement(children: .combine)
@@ -471,13 +472,14 @@ private struct MatchingTutorialTile: View {
     }
 }
 
+/// The pointing hand in the Ordering demo: the same artwork as the Matching demo,
+/// large enough to see clearly on the cards.
 private struct ComprehensionTutorialHand: View {
     var body: some View {
-        Text("👆🏻")
-            .font(.system(size: 48))
-            .rotationEffect(.degrees(-25))
-            .shadow(color: Color.black.opacity(0.16), radius: 2.5, x: 0, y: 3)
+        Image("img_tutorial-hand")
+            .resizable()
+            .frame(width: 76, height: 84)
+            .shadow(color: ComprehensionColor.tutorialHandShadow, radius: 2.5, x: 0, y: 3)
             .accessibilityHidden(true)
     }
 }
-

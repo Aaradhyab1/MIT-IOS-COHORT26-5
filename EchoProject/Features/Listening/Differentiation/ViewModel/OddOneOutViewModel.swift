@@ -63,9 +63,15 @@ final class OddOneOutViewModel {
 
     // MARK: - Title card
 
+    /// "word" when the friends say real words (Odd Sound Out), otherwise "sound".
+    private var unit: String {
+        OddOneOutSounds.saysWords(exerciseId: exerciseId) ? "word" : "sound"
+    }
+
     var title: String {
         switch phase {
-        case .start, .choosing: return "Who sounded different?"
+        case .start, .choosing:
+            return unit == "word" ? "Who said a different word?" : "Who sounded different?"
         case .speaking(_, let replay): return replay ? "Listen again" : "Listen carefully"
         case .wrong: return "Almost!"
         case .correct: return "That’s right!"
@@ -75,12 +81,12 @@ final class OddOneOutViewModel {
 
     var subtitle: String {
         switch phase {
-        case .start: return "Three friends will each say a sound. Listen carefully!"
-        case .speaking(let friend, _): return "Friend \(friend + 1) is saying a sound"
+        case .start: return "Three friends will each say a \(unit). Listen carefully!"
+        case .speaking(let friend, _): return "Friend \(friend + 1) is saying a \(unit)"
         case .choosing: return "Tap the friend who was different."
         case .wrong: return "Try another friend!"
-        case .correct: return "\(oddName) sounded different."
-        case .celebrate: return "\(oddName) said a different sound."
+        case .correct: return unit == "word" ? "\(oddName) said a different word." : "\(oddName) sounded different."
+        case .celebrate: return "\(oddName) said a different \(unit)."
         }
     }
 
@@ -126,6 +132,9 @@ final class OddOneOutViewModel {
     // MARK: - Bottom button
 
     enum BottomButton { case start, replay, replaying, next }
+
+    /// "Replay words" or "Replay sounds".
+    var replayTitle: String { "Replay \(unit)s" }
 
     var bottomButton: BottomButton? {
         switch phase {

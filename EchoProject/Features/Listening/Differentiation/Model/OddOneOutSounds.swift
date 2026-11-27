@@ -25,6 +25,12 @@ enum OddOneOutSounds {
         )
     ]
 
+    /// Odd Sound Out uses real words ("hello" / "hi"), so the screen talks about words.
+    /// The other activities use sounds like "bah" / "dah".
+    static func saysWords(exerciseId: String) -> Bool {
+        exerciseId == "differentiation.odd-sound-out"
+    }
+
     static func sound(exerciseId: String, roundIndex: Int, isOdd: Bool) -> OddOneOutSound {
         if exerciseId == "differentiation.odd-sound-out" {
             let contrast = rounds[roundIndex % rounds.count]

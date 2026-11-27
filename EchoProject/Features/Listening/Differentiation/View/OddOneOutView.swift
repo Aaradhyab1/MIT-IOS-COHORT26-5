@@ -171,7 +171,7 @@ struct OddOneOutView: View {
         case .start:
             wideButton("Start", prominent: true, action: vm.startTapped)
         case .replay:
-            wideButton("Replay sounds", prominent: true, action: vm.replayTapped)
+            wideButton(vm.replayTitle, prominent: true, action: vm.replayTapped)
         case .replaying:
             wideButton("Replaying…", prominent: false) {}
                 .disabled(true)

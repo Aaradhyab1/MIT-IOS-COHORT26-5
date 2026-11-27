@@ -14,6 +14,37 @@ struct SentencesPracticeView: View {
     }
 
     var body: some View {
+        Group {
+            if let result = vm.result {
+                SentencesCompletionView(
+                    result: result,
+                    continueTitle: vm.continueTitle,
+                    onTryAgain: vm.didTapTryAgain,
+                    onContinue: vm.didTapContinue
+                )
+            } else {
+                practice
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .echoExerciseBackground()
+        .exerciseChrome(showsBack: vm.result == nil, onBack: vm.didTapBack)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: vm.readCount)
+        .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: vm.phase)
+        .sheet(item: $vm.selectedWord, onDismiss: vm.didCloseSheet) { word in
+            PronunciationSheet(
+                word: word,
+                isPlaying: vm.isSayingWord,
+                onHear: vm.didTapHearPronunciation,
+                onClose: vm.didCloseSheet
+            )
+        }
+        .onDisappear { vm.stopAll() }
+    }
+
+    // MARK: - Reading
+
+    private var practice: some View {
         VStack(spacing: 0) {
             if let position = vm.positionText {
                 Text(position)
@@ -34,27 +65,7 @@ struct SentencesPracticeView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .safeAreaInset(edge: .bottom) { bottomButtons }
-        .echoExerciseBackground()
-        .exerciseChrome(showsBack: !isFinished, onBack: vm.didTapBack)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: vm.readCount)
-        .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: vm.phase)
-        .sensoryFeedback(.success, trigger: vm.phase) { _, new in new == .passageDone }
-        .sheet(item: $vm.selectedWord, onDismiss: vm.didCloseSheet) { word in
-            PronunciationSheet(
-                word: word,
-                isPlaying: vm.isSayingWord,
-                onHear: vm.didTapHearPronunciation,
-                onClose: vm.didCloseSheet
-            )
-        }
-        .onDisappear { vm.stopAll() }
-    }
-
-    private var isFinished: Bool {
-        if case .finished = vm.phase { return true }
-        return false
     }
 
     // MARK: - Leo and the passage (Figma "Reading content")
@@ -99,9 +110,6 @@ struct SentencesPracticeView: View {
     private var bottomButtons: some View {
         VStack(spacing: EchoSpacing.m) {
             switch vm.phase {
-            case .passageDone:
-                Button(vm.isLastPassage ? "Finish" : "Next sentence", action: vm.didTapNext)
-                    .buttonStyle(.echoPrimary)
             case .micDenied:
                 Button("Try microphone again", action: vm.startReading)
                     .buttonStyle(.echoPrimary)

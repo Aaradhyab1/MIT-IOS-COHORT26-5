@@ -10,10 +10,10 @@ enum SentencesPracticePhase: Equatable {
     case reading
     /// "Paragraph 1 / paused": "Tap to continue reading".
     case paused
-    /// The whole passage has been read; Next moves on.
-    case passageDone
 
     // Recovery
+    /// Listening ended, but no words were recognised at all.
+    case noSpeech
     /// Listening stopped by itself (a phone call, an error, the recogniser's time limit).
     case interrupted
     /// The microphone or speech recogniser did not start, and why.
@@ -21,5 +21,6 @@ enum SentencesPracticePhase: Equatable {
     /// The parent refused microphone or speech recognition access.
     case micDenied
 
-    case finished(Outcome)
+    /// "Paragraphs / Completion": accuracy for the passage just read.
+    case completed(SentencesResult)
 }

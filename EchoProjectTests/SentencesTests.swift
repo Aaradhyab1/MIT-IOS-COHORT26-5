@@ -15,14 +15,14 @@ struct ReadingTrackerTests {
         #expect(tracker.skipped.isEmpty)
     }
 
-    @Test func acceptsCloseWords() {
+    @Test func onlyExactWordsLightUp() {
         var tracker = ReadingTracker(words: ["i", "brush", "my", "teeth"])
         tracker.beginSession()
 
         tracker.update(heard: "I brush my tooth")
 
-        #expect(tracker.isFinished)
-        #expect(tracker.correctCount == 4)
+        #expect(tracker.position == 3)      // "tooth" is not "teeth"
+        #expect(!tracker.isFinished)
     }
 
     @Test func skipsAWordTheRecogniserMissed() {
@@ -99,9 +99,9 @@ struct SentencesPracticeViewModelTests {
         )
     }
 
-    /// Waits until the pretend reader has finished the passage.
+    /// Waits until the pretend reader has finished the passage and its score shows.
     private func waitForPassage(_ vm: SentencesPracticeViewModel) async {
-        for _ in 0..<200 where vm.phase != .passageDone {
+        for _ in 0..<200 where vm.result == nil {
             try? await Task.sleep(for: .milliseconds(10))
         }
     }
@@ -131,7 +131,7 @@ struct SentencesPracticeViewModelTests {
         vm.didTapMicrophone()
         await waitForPassage(vm)
 
-        #expect(vm.phase == .passageDone)
+        #expect(vm.result?.percent == 100)
         #expect(vm.words.allSatisfy { vm.highlight(for: $0) == .read })
     }
 
@@ -172,16 +172,100 @@ struct SentencesPracticeViewModelTests {
         #expect(vm.phase == .micDenied)
     }
 
-    @Test func finishingEveryPassageOpensTheCompletionScreen() async {
-        let router = AppRouter(isOnboardingComplete: true)
-        let vm = makeViewModel(exerciseId: "sentences.expanding", router: router)
+    @Test func everyPassageShowsItsOwnAccuracy() async {
+        let vm = makeViewModel(exerciseId: "sentences.expanding")
 
-        for _ in 0..<3 {
+        for index in 0..<3 {
             vm.didTapMicrophone()
             await waitForPassage(vm)
-            vm.didTapNext()
+            #expect(vm.result?.percent == 100)
+            #expect(vm.continueTitle == (index < 2 ? "Next sentence" : "Back to home"))
+            if index < 2 { vm.didTapContinue() }
         }
+    }
 
-        #expect(router.speakingPath.count == 1)
+    @Test func tryAgainResetsThePassage() async {
+        let vm = makeViewModel(exerciseId: "sentences.expanding")
+        vm.didTapMicrophone()
+        await waitForPassage(vm)
+        vm.didTapContinue()
+        vm.didTapMicrophone()
+        await waitForPassage(vm)
+
+        vm.didTapTryAgain()
+
+        #expect(vm.phase == .idle)
+        #expect(vm.result == nil)
+        #expect(vm.positionText == "Sentence 2 of 3")
+        #expect(vm.words.allSatisfy { vm.highlight(for: $0) == .none })
+    }
+}
+
+struct ReadingAccuracyTests {
+    private let expected = ["the", "little", "cat", "sleeps"]
+
+    @Test func everyWordSaidIsOneHundredPercent() {
+        let heard = ReadingAccuracy.words(in: "The little cat sleeps.")
+        #expect(ReadingAccuracy.correctWords(expected: expected, heard: heard) == 4)
+        #expect(ReadingAccuracy.percent(correct: 4, total: 4) == 100)
+    }
+
+    @Test func capitalsAndPunctuationAreIgnored() {
+        let heard = ReadingAccuracy.words(in: "THE, little! Cat sleeps?")
+        #expect(ReadingAccuracy.correctWords(expected: expected, heard: heard) == 4)
+    }
+
+    @Test func aWordMustMatchLetterForLetter() {
+        let heard = ReadingAccuracy.words(in: "the little cats sleep")
+        #expect(ReadingAccuracy.correctWords(expected: expected, heard: heard) == 2)
+    }
+
+    @Test func aSkippedWordDoesNotShiftTheRest() {
+        let heard = ReadingAccuracy.words(in: "the cat sleeps")
+        #expect(ReadingAccuracy.correctWords(expected: expected, heard: heard) == 3)
+    }
+
+    @Test func repeatedAndExtraWordsAreNotCountedTwice() {
+        let heard = ReadingAccuracy.words(in: "um the the little little cat cat sleeps sleeps yes")
+        #expect(ReadingAccuracy.correctWords(expected: expected, heard: heard) == 4)
+    }
+
+    @Test func nothingHeardIsZero() {
+        #expect(ReadingAccuracy.correctWords(expected: expected, heard: []) == 0)
+        #expect(ReadingAccuracy.percent(correct: 0, total: 0) == 0)
+    }
+
+    @Test func tiersFollowThePercentage() {
+        #expect(AccuracyTier(percent: 0) == .keepTrying)
+        #expect(AccuracyTier(percent: 39) == .keepTrying)
+        #expect(AccuracyTier(percent: 40) == .almostThere)
+        #expect(AccuracyTier(percent: 69) == .almostThere)
+        #expect(AccuracyTier(percent: 70) == .greatJob)
+        #expect(AccuracyTier(percent: 89) == .greatJob)
+        #expect(AccuracyTier(percent: 90) == .amazing)
+        #expect(AccuracyTier(percent: 100) == .amazing)
+    }
+
+    @Test func tryAgainIsOfferedBelowNinetyPercent() {
+        #expect(SentencesResult(correctWords: 17, totalWords: 20).tier.offersTryAgain)    // 85 %
+        #expect(!SentencesResult(correctWords: 18, totalWords: 20).tier.offersTryAgain)   // 90 %
+    }
+}
+
+struct HeardWordTests {
+    @Test func anAlternativeSpellingCountsAsHeard() {
+        let heard = [HeardWord(options: ["how"]), HeardWord(options: ["i"]),
+                     HeardWord(options: ["wander", "wonder"])]
+        #expect(ReadingAccuracy.correctWords(expected: ["how", "i", "wonder"], heard: heard) == 3)
+    }
+
+    @Test func theTrackerFollowsAlternativesToo() {
+        var tracker = ReadingTracker(words: ["how", "i", "wonder"])
+        tracker.beginSession()
+
+        tracker.update(heard: [HeardWord(options: ["how"]), HeardWord(options: ["i"]),
+                               HeardWord(options: ["wander", "wonder"])])
+
+        #expect(tracker.isFinished)
     }
 }

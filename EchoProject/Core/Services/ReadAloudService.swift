@@ -13,6 +13,22 @@ enum ReadAloudFailure: Equatable {
     case audioFailed
 }
 
+/// One word the recogniser heard, with the other spellings it also considered for that
+/// moment ("wonder" / "wander"). All lowercase, without punctuation. A passage word
+/// counts as said when it equals one of these exactly; confidence scores are not used.
+struct HeardWord: Equatable {
+    let options: [String]
+
+    /// Each word of a plain text, with no alternatives: "How I" → [["how"], ["i"]].
+    static func words(in text: String) -> [HeardWord] {
+        PronunciationScorer.words(in: text).map { HeardWord(options: [$0]) }
+    }
+
+    func matches(_ expected: String) -> Bool {
+        !expected.isEmpty && options.contains(expected)
+    }
+}
+
 /// Listens while the child reads a passage aloud and reports the words heard so far,
 /// live, so the screen can highlight each word as it is read.
 ///
@@ -28,12 +44,12 @@ protocol ReadAloudService: AnyObject {
     /// Starts listening. Returns nil once listening, or why it could not start.
     ///
     /// - `expecting`: the passage, used to help the recogniser with its words.
-    /// - `onHeard`: everything heard since this call, sent again each time it grows.
+    /// - `onHeard`: every word heard since this call, sent again each time it changes.
     /// - `onStopped`: called if listening ends on its own (an error, a phone call,
     ///   or the recogniser's time limit). Not called after `stop()`.
     func start(
         expecting text: String,
-        onHeard: @escaping (String) -> Void,
+        onHeard: @escaping ([HeardWord]) -> Void,
         onStopped: @escaping () -> Void
     ) -> ReadAloudFailure?
     /// Stops listening. Safe to call when nothing is running.
@@ -55,7 +71,7 @@ final class LiveReadAloudService: ReadAloudService {
     private var task: SFSpeechRecognitionTask?
     /// Goes up with every start and stop, so late results from an old session are ignored.
     private var session = 0
-    private var onHeard: ((String) -> Void)?
+    private var onHeard: (([HeardWord]) -> Void)?
     private var onStopped: (() -> Void)?
 
     // MARK: - Permission
@@ -84,7 +100,7 @@ final class LiveReadAloudService: ReadAloudService {
 
     func start(
         expecting text: String,
-        onHeard: @escaping (String) -> Void,
+        onHeard: @escaping ([HeardWord]) -> Void,
         onStopped: @escaping () -> Void
     ) -> ReadAloudFailure? {
         stop()
@@ -111,7 +127,8 @@ final class LiveReadAloudService: ReadAloudService {
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
         request.taskHint = .dictation
-        request.contextualStrings = Array(Set(PronunciationScorer.words(in: text)))
+        // The passage's words and the passage itself help the recogniser expect them.
+        request.contextualStrings = Array(Set(PronunciationScorer.words(in: text))) + [text]
         if recognizer.supportsOnDeviceRecognition {
             request.requiresOnDeviceRecognition = true
         }
@@ -132,9 +149,9 @@ final class LiveReadAloudService: ReadAloudService {
         self.onHeard = onHeard
         self.onStopped = onStopped
         // Results arrive on a background queue; hop back to the main actor.
-        let deliver: @Sendable (String?, Bool) -> Void = { [weak self] text, ended in
+        let deliver: @Sendable ([[String]]?, Bool) -> Void = { [weak self] segments, ended in
             Task { @MainActor in
-                self?.receive(text, ended: ended, session: thisSession)
+                self?.receive(segments, ended: ended, session: thisSession)
             }
         }
         task = recognizer.recognitionTask(with: request, resultHandler: Self.handler(deliver))
@@ -144,9 +161,14 @@ final class LiveReadAloudService: ReadAloudService {
         return nil
     }
 
-    private func receive(_ text: String?, ended: Bool, session thisSession: Int) {
+    /// `segments`: for each recognised piece of speech, its best text followed by the
+    /// alternatives the recogniser also considered.
+    private func receive(_ segments: [[String]]?, ended: Bool, session thisSession: Int) {
         guard session == thisSession else { return }
-        if let text, !text.isEmpty { onHeard?(text) }
+        if let segments {
+            let heard = segments.flatMap { Self.heardWords(from: $0) }
+            if !heard.isEmpty { onHeard?(heard) }
+        }
         if ended {
             let stopped = onStopped
             stop()
@@ -170,6 +192,20 @@ final class LiveReadAloudService: ReadAloudService {
         isListening = false
     }
 
+    /// One recognised segment as words. A single word keeps its alternatives.
+    private static func heardWords(from segment: [String]) -> [HeardWord] {
+        guard let best = segment.first else { return [] }
+        let bestWords = PronunciationScorer.words(in: best)
+        guard bestWords.count == 1 else { return bestWords.map { HeardWord(options: [$0]) } }
+        let alternatives = segment.dropFirst()
+            .map(PronunciationScorer.words(in:))
+            .filter { $0.count == 1 }
+            .map { $0[0] }
+        var options = bestWords
+        for word in alternatives where !options.contains(word) { options.append(word) }
+        return [HeardWord(options: options)]
+    }
+
     // MARK: - Background callbacks
 
     /// Built outside the main actor: the microphone calls it on its own audio thread.
@@ -181,10 +217,10 @@ final class LiveReadAloudService: ReadAloudService {
 
     /// Built outside the main actor: the recogniser calls it on a background queue.
     private nonisolated static func handler(
-        _ deliver: @escaping @Sendable (String?, Bool) -> Void
+        _ deliver: @escaping @Sendable ([[String]]?, Bool) -> Void
     ) -> (SFSpeechRecognitionResult?, (any Error)?) -> Void {
         { result, error in
-            let text = result?.bestTranscription.formattedString
+            let text = result?.bestTranscription.segments.map { [$0.substring] + $0.alternativeSubstrings }
             if let error {
                 print("[Echo reading] Recognition ended: \(error.localizedDescription)")
             }
@@ -211,7 +247,7 @@ final class DummyReadAloudService: ReadAloudService {
 
     func start(
         expecting text: String,
-        onHeard: @escaping (String) -> Void,
+        onHeard: @escaping ([HeardWord]) -> Void,
         onStopped: @escaping () -> Void
     ) -> ReadAloudFailure? {
         stop()
@@ -224,7 +260,7 @@ final class DummyReadAloudService: ReadAloudService {
                 try? await Task.sleep(for: interval)
                 guard !Task.isCancelled else { return }
                 heard.append(word)
-                onHeard(heard.joined(separator: " "))
+                onHeard(HeardWord.words(in: heard.joined(separator: " ")))
             }
         }
         return nil

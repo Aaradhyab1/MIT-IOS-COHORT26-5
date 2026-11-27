@@ -62,9 +62,6 @@ struct WordsPracticeView: View {
         case .notUnderstood:
             RecordingReplayRow(duration: vm.recordingDuration, isPlaying: vm.isPlayingRecording,
                                action: vm.didTapPlayRecording)
-            Button("They said it right", action: vm.didTapMarkCorrect)
-                .echoFont(.supporting, .semibold)
-                .tint(EchoColor.accent)
         case .recording:
             SpeakingControlButton(control: .stop, action: vm.didTapStop)
             RecordingWaveform()
@@ -75,9 +72,6 @@ struct WordsPracticeView: View {
         case .result:
             SpeakingReplayButton(label: "Retry", action: vm.didTapTryAgain)
             heardLabel
-            Button("They said it right", action: vm.didTapMarkCorrect)
-                .echoFont(.supporting, .semibold)
-                .tint(EchoColor.accent)
         case .help, .guidedHelp:
             SoundChipsCard(chips: vm.soundChips, hint: vm.hint,
                            highlightedIndex: vm.highlightedSoundIndex, onTapChip: vm.didTapSound)

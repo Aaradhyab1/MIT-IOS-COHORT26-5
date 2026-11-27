@@ -9,8 +9,9 @@ import Observation
 @MainActor
 final class CompletionViewModel {
     let outcome: Outcome
-    /// Characters peeking over the card. Empty shows `symbol` instead.
-    let friendImages: [String]
+    /// Pictures peeking over the card, with their size. Empty shows `symbol` instead.
+    let artwork: CompletionArtwork
+    var friendImages: [String] { artwork.images }
 
     private let exerciseId: String
     private let router: AppRouter
@@ -20,7 +21,7 @@ final class CompletionViewModel {
         self.outcome = outcome
         self.router = router
         let levelId = content.exercise(id: exerciseId)?.levelId
-        self.friendImages = CompletionArtwork.images(levelId: levelId, outcome: outcome)
+        self.artwork = CompletionArtwork.artwork(exerciseId: exerciseId, levelId: levelId, outcome: outcome)
     }
 
     var title: String {

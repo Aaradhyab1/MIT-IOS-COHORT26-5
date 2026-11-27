@@ -1,27 +1,35 @@
 import Foundation
 import Observation
 
-/// Sentences: read a sentence, rhyme or short story aloud while the words light up.
-/// One ViewModel plays all four categories (2 word combinations, 3 word phrases,
-/// Expanding sentences, Short stories & nursery rhymes); only the passages differ.
+/// Sentences: read a phrase, sentence or paragraph aloud while the words light up.
+/// One ViewModel plays all four categories; only the passages differ.
 ///
 /// Flow per passage: idle → reading ⇄ paused → completed (accuracy) → next passage.
 /// Tapping any word opens the pronunciation sheet (and pauses reading first).
-/// After every passage its accuracy is worked out with `ReadingAccuracy` and the
-/// completion screen shows it. The screen's states are listed in `SentencesPracticePhase`.
+/// The screen's states are listed in `SentencesPracticePhase`.
+///
+/// When a passage ends:
+/// - straight away once the last word is heard correctly;
+/// - after a short pause once every word has been tried but the last one was wrong or
+///   is still being recognised (the recogniser often revises it), so a wrong last word
+///   neither ends the passage early nor keeps the child waiting;
+/// - after a long silence on the last couple of words (a mumbled or skipped ending).
+/// In the last two cases the recogniser is asked for its final words first, and the
+/// accuracy is worked out from those.
 @Observable
 @MainActor
 final class SentencesPracticeViewModel {
-    /// A passage ends by itself when the child has reached its last few words and then
-    /// stays quiet this long (the recogniser may never hear the very last word exactly).
-    static let endOfReadingSilence: Duration = .seconds(3)
+    /// A long silence ends the passage only when this few words (or fewer) are left.
+    static let wordsLeftForSilenceToEnd = 2
 
     private(set) var phase: SentencesPracticePhase = .idle
     private(set) var passageIndex = 0
-    /// Next word to read. Words before it were said (green) or missed (left plain).
+    /// The current word. Words before it are green (said right) or red (not yet).
     private(set) var readCount = 0
-    /// Words the recogniser never heard, so they stay unhighlighted.
-    private(set) var missedWords: Set<Int> = []
+    /// Words said correctly.
+    private(set) var correctWords: Set<Int> = []
+    /// Words passed without being said correctly; saying one again turns it green.
+    private(set) var incorrectWords: Set<Int> = []
 
     /// The word whose pronunciation sheet is open.
     var selectedWord: ReadingWord?
@@ -42,7 +50,8 @@ final class SentencesPracticeViewModel {
     /// Latest score of each passage, by passage index, for Progress.
     private var passageResults: [Int: SentencesResult] = [:]
     private var task: Task<Void, Never>?
-    private var silenceTask: Task<Void, Never>?
+    /// The child is done; waiting for the recogniser's final words before scoring.
+    private var isFinishing = false
 
     init(
         exerciseId: String,
@@ -74,7 +83,8 @@ final class SentencesPracticeViewModel {
     }
 
     func highlight(for word: ReadingWord) -> WordHighlight {
-        if word.id < readCount { return missedWords.contains(word.id) ? .none : .read }
+        if correctWords.contains(word.id) { return .read }
+        if incorrectWords.contains(word.id) { return .incorrect }
         if phase == .reading && word.id == readCount { return .current }
         return .none
     }
@@ -86,7 +96,8 @@ final class SentencesPracticeViewModel {
         case .reading: "Reading aloud…"
         case .paused: "Tap to continue reading"
         case .noSpeech: "I didn't hear any words. Tap the mic and read aloud."
-        case .interrupted: "The microphone stopped. Tap to keep reading."
+        case .interrupted: "Reading stopped for a call or another app. Tap to keep reading."
+        case .recognitionFailed: "I couldn't follow that. Tap the mic to keep reading."
         case .micFailed(.noMicrophone): "No microphone found. Connect one, or try on an iPhone."
         case .micFailed(.recognizerUnavailable): "Speech recognition isn't available right now. Tap to try again."
         case .micFailed(.audioFailed): "The microphone didn't start. Tap to try again."
@@ -124,7 +135,7 @@ final class SentencesPracticeViewModel {
     }
 
     func startReading() {
-        guard currentPassage != nil, !tracker.isFinished else { return }
+        guard currentPassage != nil, !tracker.isFinished, result == nil else { return }
         task?.cancel()
         voice.stop()
         task = Task {
@@ -137,61 +148,90 @@ final class SentencesPracticeViewModel {
         }
     }
 
-    /// Starts a listening session from the next unread word.
+    /// Starts a listening session from the current word. Words read before are kept.
     private func listen() {
         guard let passage = currentPassage else { return }
-        tracker.beginSession()
+        isFinishing = false
         heardSessions.append([])
         let failure = reader.start(
             expecting: passage.text(from: tracker.position),
             onHeard: { [weak self] heard in self?.didHear(heard) },
-            onStopped: { [weak self] in self?.didStopListening() }
+            onQuiet: { [weak self] quiet in self?.didGoQuiet(quiet) },
+            onStopped: { [weak self] reason in self?.didStopListening(reason) }
         )
-        phase = failure.map { SentencesPracticePhase.micFailed($0) } ?? .reading
+        if let failure {
+            heardSessions.removeLast()
+            phase = .micFailed(failure)
+        } else {
+            phase = .reading
+        }
     }
 
+    /// Stops listening; the next tap carries on from the current word.
+    /// Also used when the app goes to the background.
     func pause() {
         guard phase == .reading else { return }
-        silenceTask?.cancel()
         reader.stop()
+        isFinishing = false
         phase = .paused
     }
 
+    /// New words from the recogniser. It sends everything heard in this session each time,
+    /// often rewriting earlier words, so the whole passage is lined up again every time.
     private func didHear(_ heard: [HeardWord]) {
         guard phase == .reading else { return }
         if !heardSessions.isEmpty { heardSessions[heardSessions.count - 1] = heard }
-        tracker.update(heard: heard)
-        readCount = tracker.position
-        missedWords = tracker.skipped
-        if tracker.isFinished {
-            finishPassage()
-        } else {
-            waitForEndOfReading()
+        updateTracker(settled: false)
+        // The last word said right: nothing left to wait for.
+        if tracker.isFinished && tracker.isLastWordCorrect { finishPassage() }
+    }
+
+    private func didGoQuiet(_ quiet: ReadAloudQuiet) {
+        guard phase == .reading, !isFinishing, hasHeardWords else { return }
+        switch quiet {
+        case .pause:
+            // Every word tried, the last one wrong or half heard: the child has finished.
+            // A pause with words still unread is just a breath.
+            if tracker.isFinished || (tracker.isHearingCurrentWord && tracker.remainingCount == 1) {
+                endReading()
+            }
+        case .long:
+            if tracker.remainingCount <= Self.wordsLeftForSilenceToEnd { endReading() }
         }
     }
 
-    /// When the child is on the last few words and goes quiet, the passage is done.
-    private func waitForEndOfReading() {
-        silenceTask?.cancel()
-        guard tracker.words.count - tracker.position <= ReadingTracker.lookAhead else { return }
-        silenceTask = Task {
-            try? await Task.sleep(for: Self.endOfReadingSilence)
-            guard !Task.isCancelled, phase == .reading else { return }
-            finishPassage()
-        }
+    /// Asks the recogniser for its final words; the score follows in `didStopListening`.
+    private func endReading() {
+        isFinishing = true
+        reader.finish()
     }
 
-    /// The recogniser ended by itself (a long pause, its time limit, or an error).
-    /// If this session heard something, keep listening from the next word, so a long
-    /// rhyme isn't cut off; otherwise say that nothing was heard.
-    private func didStopListening() {
+    /// Listening ended by itself.
+    /// - After `endReading()`: score the passage with the final words.
+    /// - A phone call, another app or an audio route change: keep every word read so far.
+    /// - The recogniser finished after hearing something: near the end the passage is
+    ///   done; otherwise (a long pause or its time limit) keep listening straight away.
+    /// - It heard nothing, or failed: say so; the child taps the mic to carry on.
+    private func didStopListening(_ reason: ReadAloudStop) {
         guard phase == .reading else { return }
-        silenceTask?.cancel()
-        if heardSessions.last?.isEmpty == false {
+        if isFinishing, reason != .interrupted, hasHeardWords {
+            finishPassage()
+            return
+        }
+        isFinishing = false
+        let heardInSession = heardSessions.last?.isEmpty == false
+        switch reason {
+        case .interrupted:
+            phase = .interrupted
+        case .recognizerEnded where heardInSession && tracker.remainingCount <= ReadingTracker.lookAhead:
+            finishPassage()
+        case .recognizerEnded where heardInSession:
             listen()
-            if phase != .reading { phase = .interrupted }
-        } else {
-            phase = hasHeardWords ? .interrupted : .noSpeech
+            if phase != .reading { phase = .recognitionFailed }
+        case .recognizerEnded:
+            phase = hasHeardWords ? .paused : .noSpeech
+        case .failed:
+            phase = .recognitionFailed
         }
     }
 
@@ -201,19 +241,23 @@ final class SentencesPracticeViewModel {
 
     private var hasHeardWords: Bool { !heardWords.isEmpty }
 
+    private func updateTracker(settled: Bool) {
+        tracker.align(heard: heardWords, settled: settled)
+        readCount = tracker.position
+        correctWords = tracker.matched
+        incorrectWords = tracker.incorrect
+    }
+
     private func finishPassage() {
-        silenceTask?.cancel()
         reader.stop()
-        let heard = heardWords
-        guard !heard.isEmpty else {
+        isFinishing = false
+        // Nothing recognised: no score, so a silent passage can't look finished.
+        guard hasHeardWords else {
             phase = .noSpeech
             return
         }
-        let expected = tracker.words.filter { !$0.isEmpty }
-        let result = SentencesResult(
-            correctWords: ReadingAccuracy.correctWords(expected: expected, heard: heard),
-            totalWords: expected.count
-        )
+        updateTracker(settled: true)
+        let result = SentencesResult(correctWords: tracker.correctCount, totalWords: tracker.expectedCount)
         passageResults[passageIndex] = result
         if isLastPassage { saveProgress() }
         phase = .completed(result)
@@ -274,9 +318,9 @@ final class SentencesPracticeViewModel {
     /// including after "Leave" on the shared overlay.
     func stopAll() {
         task?.cancel()
-        silenceTask?.cancel()
         reader.stop()
         voice.stop()
+        isFinishing = false
         if phase == .reading { phase = .paused }
     }
 
@@ -291,8 +335,10 @@ final class SentencesPracticeViewModel {
         passageIndex = index
         tracker = ReadingTracker(words: words.map(\.spoken))
         heardSessions = []
+        isFinishing = false
         readCount = tracker.position
-        missedWords = []
+        correctWords = []
+        incorrectWords = []
         selectedWord = nil
         phase = .idle
     }

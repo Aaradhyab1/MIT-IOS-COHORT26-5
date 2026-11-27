@@ -14,8 +14,10 @@ enum SentencesPracticePhase: Equatable {
     // Recovery
     /// Listening ended, but no words were recognised at all.
     case noSpeech
-    /// Listening stopped by itself (a phone call, an error, the recogniser's time limit).
+    /// A phone call or another app took the audio; every word read so far is kept.
     case interrupted
+    /// Recognition failed part-way; tapping the mic carries on from the current word.
+    case recognitionFailed
     /// The microphone or speech recogniser did not start, and why.
     case micFailed(ReadAloudFailure)
     /// The parent refused microphone or speech recognition access.

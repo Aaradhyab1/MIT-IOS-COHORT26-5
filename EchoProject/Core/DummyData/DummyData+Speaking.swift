@@ -31,10 +31,10 @@ extension DummyData {
             subtitle: "Read along and tap any word",                // TODO(copy)
             illustration: "level_sentences",
             exerciseIds: [
-                "sentences.two-word",
-                "sentences.three-word",
-                "sentences.expanding",
-                "sentences.short-stories"
+                "sentences.simple-phrases",
+                "sentences.short-sentences",
+                "sentences.combined-sentences",
+                "sentences.paragraphs"
             ]
         ),
         Level(
@@ -159,62 +159,68 @@ extension DummyData {
 
         // Sentences: read aloud while the words light up, tap a word to hear it.
         // Each item is one passage; its options give syllables for longer words.
+        // Grouped by how the language is built, not by word count, and each category
+        // gets a little harder from its first passage to its last.
+
+        // Simple phrases: 3–5 words that are not a full sentence (no verb).
+        // Everyday expressions → a thing with a describing word → a longer naming phrase.
         Exercise(
-            id: "sentences.two-word", levelId: "speaking.sentences", type: .readAlong,
-            title: "2 word combinations", summary: "Read two words together",
-            durationMinutes: 3,
-            illustration: "ex_sentences-two-word",
-            repetitions: 4,
+            id: "sentences.simple-phrases", levelId: "speaking.sentences", type: .readAlong,
+            title: "Simple Phrases", summary: "Read short groups of words",
+            durationMinutes: 2,
+            illustration: "ex_sentences-simple-phrases",
+            repetitions: 5,
             items: [
-                readingItem("two-word-1", "Big dog."),
-                readingItem("two-word-2", "Red ball."),
-                readingItem("two-word-3", "Happy cat.", syllables: ["happy": "HAP-py"]),
-                readingItem("two-word-4", "More milk.")
+                readingItem("phrase-good-night", "Good night, Grandma", syllables: ["grandma": "GRAND-ma"]),
+                readingItem("phrase-rainy-day", "A rainy day", syllables: ["rainy": "RAIN-y"]),
+                readingItem("phrase-pencil-box", "My new pencil box", syllables: ["pencil": "PEN-cil"]),
+                readingItem("phrase-teddy-bear", "My favourite teddy bear", syllables: ["favourite": "FA-vour-ite", "teddy": "TED-dy"]),
+                readingItem("phrase-cold-water", "A glass of cold water", syllables: ["water": "WA-ter"])
             ]
         ),
+
+        // Short sentences: one complete idea, simple words.
+        // A feeling → describing something → a plan with a place and a time.
         Exercise(
-            id: "sentences.three-word", levelId: "speaking.sentences", type: .readAlong,
-            title: "3 word phrases", summary: "Read short three-word phrases",
-            durationMinutes: 3,
-            illustration: "ex_sentences-three-word",
-            repetitions: 4,
-            items: [
-                readingItem("three-word-1", "I see Mom."),
-                readingItem("three-word-2", "We eat apples.", syllables: ["apples": "AP-ples"]),
-                readingItem("three-word-3", "Birds can fly."),
-                readingItem("three-word-4", "Pip is sleepy.", syllables: ["sleepy": "SLEEP-y"])
-            ]
-        ),
-        Exercise(
-            id: "sentences.expanding", levelId: "speaking.sentences", type: .readAlong,
-            title: "Expanding sentences", summary: "Each sentence grows a little longer",
-            durationMinutes: 4,
-            illustration: "ex_sentences-expanding",
+            id: "sentences.short-sentences", levelId: "speaking.sentences", type: .readAlong,
+            title: "Short Sentences", summary: "Read a sentence with one idea",
+            durationMinutes: 1,
+            illustration: "ex_sentences-short-sentences",
             repetitions: 3,
             items: [
-                readingItem("expanding-1", "The cat sleeps."),
-                readingItem("expanding-2", "The little cat sleeps.", syllables: ["little": "LIT-tle"]),
-                readingItem("expanding-3", "The little cat sleeps on the soft mat.", syllables: ["little": "LIT-tle"])
+                readingItem("short-hungry", "I am hungry.", syllables: ["hungry": "HUN-gry"]),
+                readingItem("short-shoes", "My shoes are too small."),
+                readingItem("short-park", "We are going to the park today.", syllables: ["going": "GO-ing", "today": "to-DAY"])
             ]
         ),
+
+        // Combined sentences: two ideas joined by and, but, or, so.
+        // A "but" sentence → a longer "so" sentence.
         Exercise(
-            id: "sentences.short-stories", levelId: "speaking.sentences", type: .readAlong,
-            title: "Short Stories & nursery rhymes", summary: "Read a short story or rhyme",
-            durationMinutes: 5,
-            illustration: "ex_sentences-short-stories",
+            id: "sentences.combined-sentences", levelId: "speaking.sentences", type: .readAlong,
+            title: "Combined Sentences", summary: "Join two ideas with and, but, or, so",
+            durationMinutes: 1,
+            illustration: "ex_sentences-combined-sentences",
             repetitions: 2,
             items: [
+                readingItem("combined-play-rain", "I want to play, but it is raining.", syllables: ["raining": "RAIN-ing"]),
+                readingItem("combined-cold-jacket", "I am cold, so I will wear my jacket.", syllables: ["jacket": "JACK-et"])
+            ]
+        ),
+
+        // Paragraphs: 3–5 connected sentences about one topic.
+        // A daily routine in three sentences.
+        Exercise(
+            id: "sentences.paragraphs", levelId: "speaking.sentences", type: .readAlong,
+            title: "Paragraphs", summary: "Read a few sentences about one topic",
+            durationMinutes: 2,
+            illustration: "ex_sentences-paragraphs",
+            repetitions: 1,
+            items: [
                 readingItem(
-                    "story-morning",
-                    "Every morning, I wake up early. I brush my teeth and get ready for school. I enjoy spending time with my friends.",
-                    syllables: ["every": "EV-ery", "morning": "MOR-ning", "early": "EAR-ly", "ready": "READ-y",
-                                "enjoy": "en-JOY", "spending": "SPEND-ing"]
-                ),
-                readingItem(
-                    "rhyme-twinkle",
-                    "Twinkle, twinkle, little star, how I wonder what you are! Up above the world so high, like a diamond in the sky.",
-                    syllables: ["twinkle": "TWIN-kle", "little": "LIT-tle", "wonder": "WON-der",
-                                "above": "a-BOVE", "diamond": "DI-a-mond"]
+                    "paragraph-morning",
+                    "Every morning, I wake up early. I brush my teeth and eat my breakfast. Then Mom walks me to school.",
+                    syllables: ["every": "EV-ery", "morning": "MOR-ning", "early": "EAR-ly", "breakfast": "BREAK-fast"]
                 )
             ]
         ),

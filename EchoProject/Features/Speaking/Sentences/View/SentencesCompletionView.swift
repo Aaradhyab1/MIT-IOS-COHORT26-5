@@ -11,22 +11,34 @@ struct SentencesCompletionView: View {
     let onTryAgain: () -> Void
     let onContinue: () -> Void
 
+    /// How far the card covers the bottom of the kids.
+    private static let cardOverlap: CGFloat = 22
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Fills the ring from empty when the screen appears.
     @State private var ringFill = 0.0
 
     var body: some View {
         VStack(spacing: 0) {
+            // The kids stand behind the card, which covers the bottom of their shirts
+            // (Figma: kids at y 140–356, card from y 334, so a 22 pt overlap).
             ZStack(alignment: .top) {
                 Image("img_sentences_complete")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 305, height: 172)
+                    // Fade the cut edge, so no hard line shows through the frosted card.
+                    .mask {
+                        LinearGradient(
+                            stops: [.init(color: .black, location: 0.8), .init(color: .clear, location: 1)],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                    }
                     .accessibilityHidden(true)
                 card
-                    .padding(.top, 172)
+                    .padding(.top, 172 - Self.cardOverlap)
             }
-            .padding(.top, 78)
+            .padding(.top, 78 + Self.cardOverlap)
 
             Spacer(minLength: EchoSpacing.l)
 

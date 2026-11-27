@@ -55,6 +55,7 @@ private struct WordChip: View {
         switch highlight {
         case .none: .clear
         case .read: SentencesStyle.read
+        case .incorrect: SentencesStyle.incorrect
         case .current: SentencesStyle.current
         }
     }
@@ -62,7 +63,8 @@ private struct WordChip: View {
     private var accessibilityValue: String {
         switch highlight {
         case .none: ""
-        case .read: "Read"
+        case .read: "Said correctly"
+        case .incorrect: "Try this word again"
         case .current: "Read this word now"
         }
     }
@@ -126,4 +128,6 @@ enum SentencesStyle {
     static let read = Color(hex: 0xA3E6C1)
     /// The word being read now, #A8D4FF.
     static let current = Color(hex: 0xA8D4FF)
+    /// Words not said correctly yet, soft red #F8C4C4.
+    static let incorrect = Color(hex: 0xF8C4C4)
 }

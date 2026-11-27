@@ -13,6 +13,16 @@ enum ReadAloudFailure: Equatable {
     case audioFailed
 }
 
+/// Why listening ended by itself.
+enum ReadAloudStop: Equatable {
+    /// The recogniser finished: a long pause, its time limit, or it heard nothing.
+    case recognizerEnded
+    /// Another app or a phone call took over the audio.
+    case interrupted
+    /// Recognition failed with an error.
+    case failed
+}
+
 /// One word the recogniser heard, with the other spellings it also considered for that
 /// moment ("wonder" / "wander"). All lowercase, without punctuation. A passage word
 /// counts as said when it equals one of these exactly; confidence scores are not used.
@@ -27,6 +37,14 @@ struct HeardWord: Equatable {
     func matches(_ expected: String) -> Bool {
         !expected.isEmpty && options.contains(expected)
     }
+}
+
+/// How long the child has been quiet after speaking.
+enum ReadAloudQuiet: Equatable {
+    /// About half a second: a breath between words, or the end of the reading.
+    case pause
+    /// A few seconds: the child has stopped reading.
+    case long
 }
 
 /// Listens while the child reads a passage aloud and reports the words heard so far,
@@ -45,13 +63,21 @@ protocol ReadAloudService: AnyObject {
     ///
     /// - `expecting`: the passage, used to help the recogniser with its words.
     /// - `onHeard`: every word heard since this call, sent again each time it changes.
-    /// - `onStopped`: called if listening ends on its own (an error, a phone call,
-    ///   or the recogniser's time limit). Not called after `stop()`.
+    /// - `onQuiet`: the child spoke and has now been quiet for a short pause, then
+    ///   (if still quiet) for a long silence. Sent again after each stretch of speech.
+    /// - `onStopped`: called with the reason if listening ends on its own (an error,
+    ///   a phone call, the recogniser's time limit, or after `finish()`).
+    ///   Not called after `stop()`.
     func start(
         expecting text: String,
         onHeard: @escaping ([HeardWord]) -> Void,
-        onStopped: @escaping () -> Void
+        onQuiet: @escaping (ReadAloudQuiet) -> Void,
+        onStopped: @escaping (ReadAloudStop) -> Void
     ) -> ReadAloudFailure?
+    /// The child has finished: stop taking audio and get the recogniser's final words
+    /// right away, instead of waiting for it to notice the silence. The final words
+    /// arrive through `onHeard`, then `onStopped(.recognizerEnded)`.
+    func finish()
     /// Stops listening. Safe to call when nothing is running.
     func stop()
 }
@@ -72,7 +98,34 @@ final class LiveReadAloudService: ReadAloudService {
     /// Goes up with every start and stop, so late results from an old session are ignored.
     private var session = 0
     private var onHeard: (([HeardWord]) -> Void)?
-    private var onStopped: (() -> Void)?
+    private var onQuiet: ((ReadAloudQuiet) -> Void)?
+    private var onStopped: ((ReadAloudStop) -> Void)?
+    private var interruptionObserver: (any NSObjectProtocol)?
+    private var audioObservers: [any NSObjectProtocol] = []
+
+    // Telling speech from silence, from the microphone level.
+    /// Quiet this long after speaking is a pause (`onQuiet(.pause)`).
+    private static let pauseLength: Duration = .milliseconds(600)
+    /// Quiet this long after speaking is a long silence (`onQuiet(.long)`).
+    private static let silenceLength: Duration = .seconds(3)
+    /// After `finish()`, the longest wait for the recogniser's final words.
+    private static let finalResultWait: Duration = .milliseconds(1500)
+    private var hasReportedPause = false
+    /// Loudness of the room with nobody speaking, in decibels; follows the quietest level.
+    private var noiseFloor: Float = -60
+    private var lastSpeech: ContinuousClock.Instant?
+    private var isSpeaking = false
+
+    init() {
+        // A phone call, Siri or another app taking the audio stops listening cleanly.
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+            guard raw == AVAudioSession.InterruptionType.began.rawValue else { return }
+            MainActor.assumeIsolated { self?.endListening(.interrupted) }
+        }
+    }
 
     // MARK: - Permission
 
@@ -101,7 +154,8 @@ final class LiveReadAloudService: ReadAloudService {
     func start(
         expecting text: String,
         onHeard: @escaping ([HeardWord]) -> Void,
-        onStopped: @escaping () -> Void
+        onQuiet: @escaping (ReadAloudQuiet) -> Void,
+        onStopped: @escaping (ReadAloudStop) -> Void
     ) -> ReadAloudFailure? {
         stop()
         guard let recognizer, recognizer.isAvailable else {
@@ -116,6 +170,7 @@ final class LiveReadAloudService: ReadAloudService {
         }
 
         let engine = self.engine ?? AVAudioEngine()
+        if self.engine == nil { observeAudioChanges(of: engine) }
         self.engine = engine
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
@@ -133,7 +188,13 @@ final class LiveReadAloudService: ReadAloudService {
             request.requiresOnDeviceRecognition = true
         }
 
-        input.installTap(onBus: 0, bufferSize: 1024, format: format, block: Self.tap(feeding: request))
+        self.session += 1
+        let thisSession = self.session
+        let level: @Sendable (Float) -> Void = { [weak self] decibels in
+            let service = self
+            Task { @MainActor in service?.receiveLevel(decibels, session: thisSession) }
+        }
+        input.installTap(onBus: 0, bufferSize: 1024, format: format, block: Self.tap(feeding: request, level: level))
         hasTap = true
         engine.prepare()
         do {
@@ -144,14 +205,18 @@ final class LiveReadAloudService: ReadAloudService {
             return .audioFailed
         }
 
-        self.session += 1
-        let thisSession = self.session
         self.onHeard = onHeard
+        self.onQuiet = onQuiet
         self.onStopped = onStopped
+        noiseFloor = -60
+        lastSpeech = nil
+        isSpeaking = false
+        hasReportedPause = false
         // Results arrive on a background queue; hop back to the main actor.
-        let deliver: @Sendable ([[String]]?, Bool) -> Void = { [weak self] segments, ended in
+        let deliver: @Sendable ([[String]]?, ReadAloudStop?) -> Void = { [weak self] segments, ended in
+            let service = self
             Task { @MainActor in
-                self?.receive(segments, ended: ended, session: thisSession)
+                service?.receive(segments, ended: ended, session: thisSession)
             }
         }
         task = recognizer.recognitionTask(with: request, resultHandler: Self.handler(deliver))
@@ -163,22 +228,101 @@ final class LiveReadAloudService: ReadAloudService {
 
     /// `segments`: for each recognised piece of speech, its best text followed by the
     /// alternatives the recogniser also considered.
-    private func receive(_ segments: [[String]]?, ended: Bool, session thisSession: Int) {
+    private func receive(_ segments: [[String]]?, ended: ReadAloudStop?, session thisSession: Int) {
         guard session == thisSession else { return }
         if let segments {
             let heard = segments.flatMap { Self.heardWords(from: $0) }
             if !heard.isEmpty { onHeard?(heard) }
         }
-        if ended {
-            let stopped = onStopped
-            stop()
-            stopped?()
+        if let ended { endListening(ended) }
+    }
+
+    /// Speech is anything clearly louder than the room. Once the child has spoken and then
+    /// stays quiet, `onQuiet(.pause)` and later `onQuiet(.long)` are sent, once each per
+    /// stretch of speech.
+    private func receiveLevel(_ decibels: Float, session thisSession: Int) {
+        guard session == thisSession, isListening else { return }
+        if decibels < noiseFloor {
+            noiseFloor = decibels
+        } else {
+            noiseFloor += (decibels - noiseFloor) * 0.002   // drifts up slowly in a noisier room
         }
+        let now = ContinuousClock.now
+        if decibels > max(noiseFloor + 12, -55) {
+            lastSpeech = now
+            isSpeaking = true
+            hasReportedPause = false
+        } else if isSpeaking, let lastSpeech {
+            let quiet = now - lastSpeech
+            if quiet >= Self.silenceLength {
+                isSpeaking = false
+                onQuiet?(.long)
+            } else if quiet >= Self.pauseLength, !hasReportedPause {
+                hasReportedPause = true
+                onQuiet?(.pause)
+            }
+        }
+    }
+
+    func finish() {
+        guard isListening else { return }
+        // Stop the microphone but keep the recognition task: ending the audio makes the
+        // recogniser deliver its final result straight away.
+        if let engine {
+            if engine.isRunning { engine.stop() }
+            if hasTap { engine.inputNode.removeTap(onBus: 0) }
+        }
+        hasTap = false
+        onQuiet = nil
+        request?.endAudio()
+        // Normally the final result arrives within a moment. If it never does, end anyway
+        // with what was heard, so the child is never left waiting.
+        let thisSession = session
+        Task { [weak self] in
+            try? await Task.sleep(for: Self.finalResultWait)
+            guard let self, self.session == thisSession else { return }
+            print("[Echo reading] No final result after finishing; ending with what was heard.")
+            self.endListening(.recognizerEnded)
+        }
+    }
+
+    /// Headphones plugged in or out, a Bluetooth microphone dropping, or the audio
+    /// system restarting all stop the microphone; treat them like an interruption so
+    /// the child can carry on from the current word.
+    private func observeAudioChanges(of engine: AVAudioEngine) {
+        let center = NotificationCenter.default
+        audioObservers.append(center.addObserver(
+            forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
+        ) { [weak self] _ in
+            // Delivered on the main queue.
+            MainActor.assumeIsolated {
+                guard let self, self.engine?.isRunning == false else { return }
+                print("[Echo reading] The audio route changed; listening stopped.")
+                self.endListening(.interrupted)
+            }
+        })
+        audioObservers.append(center.addObserver(
+            forName: AVAudioSession.mediaServicesWereResetNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                print("[Echo reading] The audio system restarted; listening stopped.")
+                self?.endListening(.interrupted)
+            }
+        })
+    }
+
+    /// Stops and tells the ViewModel why. Does nothing when not listening.
+    private func endListening(_ reason: ReadAloudStop) {
+        guard isListening else { return }
+        let stopped = onStopped
+        stop()
+        stopped?(reason)
     }
 
     func stop() {
         session += 1
         onHeard = nil
+        onQuiet = nil
         onStopped = nil
         if let engine {
             if engine.isRunning { engine.stop() }
@@ -210,21 +354,42 @@ final class LiveReadAloudService: ReadAloudService {
 
     /// Built outside the main actor: the microphone calls it on its own audio thread.
     private nonisolated static func tap(
-        feeding request: SFSpeechAudioBufferRecognitionRequest
+        feeding request: SFSpeechAudioBufferRecognitionRequest,
+        level: @escaping @Sendable (Float) -> Void
     ) -> AVAudioNodeTapBlock {
-        { buffer, _ in request.append(buffer) }
+        { buffer, _ in
+            request.append(buffer)
+            level(decibels(of: buffer))
+        }
+    }
+
+    /// Average loudness of one buffer of microphone audio, in decibels (−100 … 0).
+    private nonisolated static func decibels(of buffer: AVAudioPCMBuffer) -> Float {
+        guard let samples = buffer.floatChannelData?[0], buffer.frameLength > 0 else { return -100 }
+        let count = Int(buffer.frameLength)
+        var sum: Float = 0
+        for index in 0..<count { sum += samples[index] * samples[index] }
+        let rms = (sum / Float(count)).squareRoot()
+        return max(20 * log10(max(rms, 1e-7)), -100)
     }
 
     /// Built outside the main actor: the recogniser calls it on a background queue.
     private nonisolated static func handler(
-        _ deliver: @escaping @Sendable ([[String]]?, Bool) -> Void
+        _ deliver: @escaping @Sendable ([[String]]?, ReadAloudStop?) -> Void
     ) -> (SFSpeechRecognitionResult?, (any Error)?) -> Void {
         { result, error in
             let text = result?.bestTranscription.segments.map { [$0.substring] + $0.alternativeSubstrings }
             if let error {
                 print("[Echo reading] Recognition ended: \(error.localizedDescription)")
             }
-            deliver(text, error != nil || result?.isFinal == true)
+            let ended: ReadAloudStop?
+            if let error = error as NSError? {
+                // 1110: "No speech detected" — the recogniser simply heard nothing.
+                ended = error.code == 1110 ? .recognizerEnded : .failed
+            } else {
+                ended = result?.isFinal == true ? .recognizerEnded : nil
+            }
+            deliver(text, ended)
         }
     }
 }
@@ -238,6 +403,7 @@ final class DummyReadAloudService: ReadAloudService {
     private(set) var isListening = false
     private let wordInterval: Duration
     private var reading: Task<Void, Never>?
+    private var onStopped: ((ReadAloudStop) -> Void)?
 
     init(wordInterval: Duration = .milliseconds(450)) {
         self.wordInterval = wordInterval
@@ -248,10 +414,12 @@ final class DummyReadAloudService: ReadAloudService {
     func start(
         expecting text: String,
         onHeard: @escaping ([HeardWord]) -> Void,
-        onStopped: @escaping () -> Void
+        onQuiet: @escaping (ReadAloudQuiet) -> Void,
+        onStopped: @escaping (ReadAloudStop) -> Void
     ) -> ReadAloudFailure? {
         stop()
         isListening = true
+        self.onStopped = onStopped
         let words = text.split(separator: " ").map(String.init)
         let interval = wordInterval
         reading = Task {
@@ -266,9 +434,16 @@ final class DummyReadAloudService: ReadAloudService {
         return nil
     }
 
+    func finish() {
+        let stopped = onStopped
+        stop()
+        stopped?(.recognizerEnded)
+    }
+
     func stop() {
         reading?.cancel()
         reading = nil
+        onStopped = nil
         isListening = false
     }
 }

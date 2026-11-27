@@ -8,6 +8,7 @@ struct SentencesPracticeView: View {
     @State private var vm: SentencesPracticeViewModel
     @Environment(\.openURL) private var openURL
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     init(vm: SentencesPracticeViewModel) {
         _vm = State(initialValue: vm)
@@ -40,6 +41,10 @@ struct SentencesPracticeView: View {
             )
         }
         .onDisappear { vm.stopAll() }
+        // Leaving the app stops the microphone; reading carries on from the current word.
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .background { vm.pause() }
+        }
     }
 
     // MARK: - Reading
@@ -79,6 +84,8 @@ struct SentencesPracticeView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(height: 104)
+                    // A soft contact shadow so Leo sits on the card instead of floating.
+                    .shadow(color: Color(hex: 0x0D2E1A, opacity: 0.18), radius: 4, y: 3)
                     .padding(.leading, 8)
                     .accessibilityHidden(true)
             }
@@ -89,16 +96,29 @@ struct SentencesPracticeView: View {
     private var controls: some View {
         VStack(spacing: 12) {
             if vm.showsMicrophone {
-                SpeakingControlButton(control: .microphone, action: vm.didTapMicrophone)
-                    .symbolEffect(.pulse, isActive: vm.isReading && !reduceMotion)
+                // Recording: red pause (square) button. Paused or idle: blue microphone.
+                SpeakingControlButton(control: vm.isReading ? .stop : .microphone, action: vm.didTapMicrophone)
                     .accessibilityLabel(vm.isReading ? "Pause reading" : "Read aloud")
+                    .contentTransition(.symbolEffect(.replace))
             }
             if let status = vm.status {
-                Text(status)
-                    .echoFont(.body, .semibold)
-                    .foregroundStyle(.black)
-                    .multilineTextAlignment(.center)
-                    .contentTransition(.opacity)
+                HStack(spacing: EchoSpacing.s) {
+                    if vm.isReading {
+                        // A live "recording" dot, so reading looks different from paused.
+                        Circle()
+                            .fill(EchoColor.speakingStop)
+                            .frame(width: 10, height: 10)
+                            .phaseAnimator([1.0, 0.35]) { dot, opacity in
+                                dot.opacity(reduceMotion ? 1 : opacity)
+                            } animation: { _ in .easeInOut(duration: 0.7) }
+                            .accessibilityHidden(true)
+                    }
+                    Text(status)
+                        .echoFont(.body, .semibold)
+                        .foregroundStyle(vm.isReading ? Color.black : EchoColor.speakingBody)
+                        .multilineTextAlignment(.center)
+                        .contentTransition(.opacity)
+                }
             }
         }
         .frame(maxWidth: .infinity)
@@ -134,7 +154,7 @@ private struct SentencesFlowPreview: View {
     var body: some View {
         @Bindable var router = container.router
         NavigationStack(path: $router.speakingPath) {
-            RouteDestinationView(route: .exercise(exerciseId: "sentences.short-stories"))
+            RouteDestinationView(route: .exercise(exerciseId: "sentences.paragraphs"))
                 .navigationDestination(for: Route.self) { route in
                     RouteDestinationView(route: route)
                 }

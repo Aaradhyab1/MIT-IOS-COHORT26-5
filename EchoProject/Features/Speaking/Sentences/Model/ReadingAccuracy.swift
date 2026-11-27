@@ -4,14 +4,10 @@ import Foundation
 ///
 /// accuracy = correctly matched words ÷ expected words × 100
 ///
-/// Each heard word is compared with the expected word letter by letter, ignoring
-/// capital letters and punctuation; it only counts when every letter matches.
-/// The heard words are lined up with the passage using the longest common
-/// subsequence, so:
-/// - a skipped word just doesn't match, and the words after it still line up;
-/// - a repeated or extra word ("the the", "um") is ignored, never counted twice;
-/// - every expected word can be matched at most once.
-///
+/// Uses the same word-by-word alignment as the live highlighting (`ReadingTracker`):
+/// exact letter-by-letter matches, ignoring capitals and punctuation; skipped words
+/// count as incorrect, extra or repeated words are ignored and never counted twice,
+/// and a word said again right after a mistake is corrected.
 /// Speech recognition confidence is not used. Pure Swift, so it is easy to unit test.
 enum ReadingAccuracy {
     /// Lowercase words with punctuation removed: "Every morning," → ["every", "morning"].
@@ -19,22 +15,11 @@ enum ReadingAccuracy {
         PronunciationScorer.words(in: text)
     }
 
-    /// How many expected words were said exactly, in order. A heard word matches when
-    /// its text, or one of the alternatives the recogniser considered, equals the word.
+    /// How many expected words were said exactly. A heard word matches when its text,
+    /// or one of the alternatives the recogniser considered, equals the word.
     static func correctWords(expected: [String], heard: [HeardWord]) -> Int {
         guard !expected.isEmpty, !heard.isEmpty else { return 0 }
-        // previous[j] = best count using the expected words so far and heard[0..<j].
-        var previous = Array(repeating: 0, count: heard.count + 1)
-        for expectedWord in expected {
-            var current = Array(repeating: 0, count: heard.count + 1)
-            for (j, heardWord) in heard.enumerated() {
-                current[j + 1] = heardWord.matches(expectedWord)
-                    ? previous[j] + 1
-                    : max(previous[j + 1], current[j])
-            }
-            previous = current
-        }
-        return previous[heard.count]
+        return ReadingTracker.aligned(expected, heard: heard).matched.count
     }
 
     /// Plain heard words, with no alternatives.

@@ -78,7 +78,7 @@ extension DummyData {
             SessionRecord(id: UUID(), exerciseId: "detection.hide-and-seek.animal", startedAt: daysAgo(6), correctCount: 2, totalCount: 2, outcome: .greatJob),
             SessionRecord(id: UUID(), exerciseId: "detection.hide-and-seek.doorbell", startedAt: daysAgo(3), correctCount: 1, totalCount: 2, outcome: .almostThere),
             SessionRecord(id: UUID(), exerciseId: "differentiation.odd-sound-out", startedAt: daysAgo(2), correctCount: 1, totalCount: 1, outcome: .greatJob),
-            SessionRecord(id: UUID(), exerciseId: "words.three-letter", startedAt: daysAgo(1), correctCount: 1, totalCount: 1, outcome: .greatJob)
+            SessionRecord(id: UUID(), exerciseId: "words.two-syllable", startedAt: daysAgo(1), correctCount: 1, totalCount: 1, outcome: .greatJob)
         ]
     }
 
@@ -86,7 +86,7 @@ extension DummyData {
     static let exerciseProgress: [ExerciseProgress] = [
         ExerciseProgress(exerciseId: "detection.hide-and-seek.animal", completedCount: 10, targetCount: 10, bestOutcome: .greatJob),
         ExerciseProgress(exerciseId: "detection.hide-and-seek.doorbell", completedCount: 3, targetCount: 10, bestOutcome: .almostThere),
-        ExerciseProgress(exerciseId: "differentiation.odd-sound-out", completedCount: 1, targetCount: 10, bestOutcome: .greatJob),
-        ExerciseProgress(exerciseId: "words.three-letter", completedCount: 2, targetCount: 10, bestOutcome: .greatJob)
+        ExerciseProgress(exerciseId: "differentiation.odd-sound-out", completedCount: 1, targetCount: 10, bestOutcome: .greatJob)
+        // Speaking › Words exercises start at 0/10 (no entry here).
     ]
 }

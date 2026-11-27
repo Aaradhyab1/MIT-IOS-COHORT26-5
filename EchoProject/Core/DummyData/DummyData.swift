@@ -47,12 +47,18 @@ extension DummyData {
     }
 
     /// Identification: hear a word, pick it from four pictures.
-    static func pictureItem(_ id: String, answer: String, choices: [String]) -> ExerciseItem {
+    /// Each option plays Resources/Audio/<id>.mp3; `sounds` renames a file when it differs
+    /// from the option ("drums" plays drum.mp3). The item's audio is the answer's sound.
+    static func pictureItem(_ id: String, answer: String, choices: [String],
+                            prompt: String = "Which one did you hear?",   // TODO(copy)
+                            sounds: [String: String] = [:]) -> ExerciseItem {
         ExerciseItem(
             id: id,
-            prompt: "Which one did you hear?",          // TODO(copy)
-            audio: "snd_\(answer)",
-            options: choices.map { Option(id: $0, label: $0.capitalized, image: "img_\($0)") },
+            prompt: prompt,
+            audio: "snd_\(sounds[answer] ?? answer)",
+            options: choices.map {
+                Option(id: $0, label: $0.capitalized, image: "img_\($0)", audio: "snd_\(sounds[$0] ?? $0)")
+            },
             correctOptionId: answer
         )
     }

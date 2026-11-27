@@ -6,6 +6,6 @@ import Foundation
 /// screen only edits files inside their own folder.
 extension AppContainer {
     func makePictureChoiceViewModel(exerciseId: String) -> PictureChoiceViewModel {
-        PictureChoiceViewModel(exerciseId: exerciseId, content: content, progress: progress, router: router)
+        PictureChoiceViewModel(exerciseId: exerciseId, content: content, audio: audio, progress: progress, router: router)
     }
 }

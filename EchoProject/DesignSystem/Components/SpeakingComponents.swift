@@ -161,8 +161,10 @@ struct SpeakingAvatar: View {
     var body: some View {
         Image(imageName)
             .resizable()
-            .scaledToFit()
+            .scaledToFill()
             .frame(width: size, height: size)
+            .clipShape(.circle)                                     // the square art is cut into a circle
+            .overlay(Circle().stroke(.white, lineWidth: size * 0.03))   // white ring, as in Figma
             .accessibilityHidden(true)
     }
 }

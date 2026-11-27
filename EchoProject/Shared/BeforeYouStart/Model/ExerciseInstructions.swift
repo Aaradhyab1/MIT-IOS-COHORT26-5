@@ -108,7 +108,7 @@ struct ExerciseInstructions {
             return ExerciseInstructions(
                 steps: makeSteps([
                     ("Listen to the shopkeeper", "Hear what they ask. Tap to hear it again."),
-                    ("Take your turn", "Tap the microphone and answer in your own words."),
+                    ("Take your turn", "Tap the microphone and say one of the choices."),
                     ("Get your ice cream", "Finish the order to complete the visit.")
                 ]),
                 tip: speakingTip,

@@ -144,8 +144,8 @@ extension DummyData {
             collection: "Which One Sounds Different",
             illustration: "ex_odd-sound-out",
             items: [
-                oddOneOutItem("odd-1", prompt: "Which one sounds different?", odd: .leo),
-                oddOneOutItem("odd-2", prompt: "Which one sounds different?", odd: .zoe)
+                oddOneOutItem("odd-1", prompt: "Who said a different word?", odd: .leo),
+                oddOneOutItem("odd-2", prompt: "Who said a different word?", odd: .zoe)
             ]
         ),
         Exercise(
@@ -207,6 +207,12 @@ extension DummyData {
         )
     ]
 
+    /// Instruments on the meadow, in Figma order: guitar, drums (back), flute, harmonium (front).
+    private static let instruments = ["guitar", "drums", "flute", "harmonium"]
+    private static let instrumentSounds = ["drums": "drum"]
+    /// Animals on the meadow, in Figma order: cow, goat (back), lion, elephant (front).
+    private static let animals = ["cow", "goat", "lion", "elephant"]
+
     private static let identification: [Exercise] = [
         Exercise(
             id: "identification.instruments",
@@ -216,8 +222,12 @@ extension DummyData {
             summary: "Which instrument is playing?",                // TODO(copy)
             illustration: "ex_instruments",
             items: [
-                pictureItem("instruments-1", answer: "drum", choices: ["drum", "guitar", "piano", "flute"]),
-                pictureItem("instruments-2", answer: "piano", choices: ["drum", "guitar", "piano", "flute"])
+                // Figma "08 · Level 3 — Instruments". Sounds: Resources/Audio/<instrument>.mp3
+                // (harmonium.mp3 is still to come; until then it just waits 2 s).
+                pictureItem("instruments-1", answer: "drums", choices: instruments,
+                            prompt: "Which instrument did you hear?", sounds: instrumentSounds),
+                pictureItem("instruments-2", answer: "flute", choices: instruments,
+                            prompt: "Which instrument did you hear?", sounds: instrumentSounds)
             ]
         ),
         Exercise(
@@ -228,8 +238,12 @@ extension DummyData {
             summary: "Which animal made that sound?",               // TODO(copy)
             illustration: "ex_animals",
             items: [
-                pictureItem("animals-1", answer: "cow", choices: ["cow", "goat", "horse", "sheep"]),
-                pictureItem("animals-2", answer: "sheep", choices: ["cow", "goat", "horse", "sheep"])
+                // Figma "09 · Level 3 — Animals": cow first, then elephant.
+                // Sounds: Resources/Audio/<animal>.mp3 (still to come; until then it just waits 2 s).
+                pictureItem("animals-1", answer: "cow", choices: animals,
+                            prompt: "Which animal did you hear?"),
+                pictureItem("animals-2", answer: "elephant", choices: animals,
+                            prompt: "Which animal did you hear?")
             ]
         ),
         Exercise(

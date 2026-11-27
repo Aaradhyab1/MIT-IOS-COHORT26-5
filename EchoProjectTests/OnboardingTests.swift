@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import EchoProject
 
@@ -32,8 +33,12 @@ struct ChildProfileViewModelTests {
         Calendar.current.date(from: DateComponents(year: year, month: month, day: day))!
     }
 
-    private func makeViewModel(profile: InMemoryProfileRepository = InMemoryProfileRepository()) -> ChildProfileViewModel {
-        ChildProfileViewModel(router: AppRouter(isOnboardingComplete: false), profile: profile, today: { today })
+    private func makeViewModel(profile: InMemoryProfileRepository? = nil) -> ChildProfileViewModel {
+        ChildProfileViewModel(
+            router: AppRouter(isOnboardingComplete: false),
+            profile: profile ?? InMemoryProfileRepository(),
+            today: { today }
+        )
     }
 
     @Test func emptyFieldsHaveNoText() {
@@ -109,10 +114,14 @@ struct ChildProfileViewModelTests {
 @MainActor
 struct ChoosePathViewModelTests {
     private func makeViewModel(
-        router: AppRouter = AppRouter(isOnboardingComplete: false),
-        profile: InMemoryProfileRepository = InMemoryProfileRepository()
+        router: AppRouter? = nil,
+        profile: InMemoryProfileRepository? = nil
     ) -> ChoosePathViewModel {
-        ChoosePathViewModel(router: router, content: InMemoryContentRepository(), profile: profile)
+        ChoosePathViewModel(
+            router: router ?? AppRouter(isOnboardingComplete: false),
+            content: InMemoryContentRepository(),
+            profile: profile ?? InMemoryProfileRepository()
+        )
     }
 
     @Test func showsTheFourListeningLevelsInOrder() {
@@ -177,10 +186,15 @@ struct ChoosePathViewModelTests {
 @MainActor
 struct QuickCheckViewModelTests {
     private func makeViewModel(
-        router: AppRouter = AppRouter(isOnboardingComplete: false),
-        profile: InMemoryProfileRepository = InMemoryProfileRepository()
+        router: AppRouter? = nil,
+        profile: InMemoryProfileRepository? = nil
     ) -> QuickCheckViewModel {
-        QuickCheckViewModel(router: router, content: InMemoryContentRepository(), profile: profile, advanceDelay: .zero)
+        QuickCheckViewModel(
+            router: router ?? AppRouter(isOnboardingComplete: false),
+            content: InMemoryContentRepository(),
+            profile: profile ?? InMemoryProfileRepository(),
+            advanceDelay: .zero
+        )
     }
 
     @Test func startsOnQuestionOneOfEight() {
@@ -255,9 +269,14 @@ struct QuickCheckViewModelTests {
 
 @MainActor
 struct QuickCheckResultViewModelTests {
-    private func makeViewModel(router: AppRouter = AppRouter(isOnboardingComplete: false),
+    private func makeViewModel(router: AppRouter? = nil,
                                profile: InMemoryProfileRepository) -> QuickCheckResultViewModel {
-        QuickCheckResultViewModel(router: router, content: InMemoryContentRepository(), profile: profile, stepDelay: .zero)
+        QuickCheckResultViewModel(
+            router: router ?? AppRouter(isOnboardingComplete: false),
+            content: InMemoryContentRepository(),
+            profile: profile,
+            stepDelay: .zero
+        )
     }
 
     @Test func recommendsTheQuickCheckLevel() {

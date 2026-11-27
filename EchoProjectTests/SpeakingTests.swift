@@ -54,7 +54,7 @@ struct SpeakingTests {
 
     @Test func everyWordIsBrokenIntoPartsWithSounds() {
         let content = InMemoryContentRepository()
-        for id in ["words.two-letter", "words.three-letter", "words.four-letter", "words.five-plus-letter"] {
+        for id in ["words.one-syllable", "words.two-syllable", "words.three-syllable", "words.four-plus-syllable"] {
             for item in content.exercise(id: id)?.items ?? [] {
                 let word = WordPracticeItem(item)
                 #expect(word.parts.count >= 2, "\(word.word) needs at least two parts")
@@ -62,6 +62,19 @@ struct SpeakingTests {
                 // The parts spell the word: "S" + "UN" = "SUN".
                 #expect(word.soundChips.joined() == word.word.uppercased(), "\(word.word) parts don't spell it")
             }
+        }
+    }
+
+    @Test func longerWordsAreSplitIntoOnePartPerSyllable() {
+        let content = InMemoryContentRepository()
+        let syllables = ["words.two-syllable": 2, "words.three-syllable": 3]
+        for (id, count) in syllables {
+            for item in content.exercise(id: id)?.items ?? [] {
+                #expect(WordPracticeItem(item).parts.count == count, "\(item.text ?? "") should have \(count) parts")
+            }
+        }
+        for item in content.exercise(id: "words.four-plus-syllable")?.items ?? [] {
+            #expect(WordPracticeItem(item).parts.count >= 4, "\(item.text ?? "") should have 4 or more parts")
         }
     }
 
@@ -75,12 +88,12 @@ struct SpeakingTests {
             return
         }
         #expect(title == "Words")
-        #expect(sections.flatMap(\.rows).map(\.title) == ["2 letter", "3 letter", "4 letter", "5 letter & more"])
+        #expect(sections.flatMap(\.rows).map(\.title) == ["1 syllable", "2 syllables", "3 syllables", "4 syllables & more"])
     }
 
     @Test func backDuringPracticeOpensTheSharedLeaveOverlay() async {
         let container = AppContainer.dummy(startPastOnboarding: true)
-        let vm = container.makeWordsPracticeViewModel(exerciseId: "words.three-letter")
+        let vm = container.makeWordsPracticeViewModel(exerciseId: "words.two-syllable")
         await vm.onAppear()
         vm.didTapBack()
         #expect(container.router.overlay == .leavePractice)
@@ -88,7 +101,7 @@ struct SpeakingTests {
 
     @Test func wordsStartsListeningOnceTheSpeechModelIsReady() async {
         let container = AppContainer.dummy(startPastOnboarding: true)
-        let vm = container.makeWordsPracticeViewModel(exerciseId: "words.three-letter")
+        let vm = container.makeWordsPracticeViewModel(exerciseId: "words.two-syllable")
         #expect(vm.phase == .preparing)
         await vm.onAppear()
         #expect(vm.phase == .listen)
@@ -98,15 +111,15 @@ struct SpeakingTests {
 
     @Test func eachWordExerciseHasTwelveWords() {
         let content = InMemoryContentRepository()
-        for id in ["words.two-letter", "words.three-letter", "words.four-letter", "words.five-plus-letter"] {
+        for id in ["words.one-syllable", "words.two-syllable", "words.three-syllable", "words.four-plus-syllable"] {
             #expect(content.exercise(id: id)?.items.count == 12, "\(id) should have 12 words")
         }
     }
 
     @Test func practicePicksFiveRandomWordsFromTheExercise() {
         let container = AppContainer.dummy(startPastOnboarding: true)
-        let allWords = Set(container.content.exercise(id: "words.three-letter")?.items.compactMap(\.text) ?? [])
-        let vm = container.makeWordsPracticeViewModel(exerciseId: "words.three-letter")
+        let allWords = Set(container.content.exercise(id: "words.two-syllable")?.items.compactMap(\.text) ?? [])
+        let vm = container.makeWordsPracticeViewModel(exerciseId: "words.two-syllable")
         #expect(vm.wordCount == WordsPracticeViewModel.wordsPerSession)
         #expect(allWords.contains(vm.word))
     }
@@ -116,7 +129,7 @@ struct SpeakingTests {
         speech.isAvailable = false
         let content = InMemoryContentRepository()
         let vm = WordsPracticeViewModel(
-            exerciseId: "words.three-letter",
+            exerciseId: "words.two-syllable",
             content: content,
             recording: DummyRecordingService(),
             speech: speech,
@@ -130,7 +143,7 @@ struct SpeakingTests {
 
     @Test func recordStartsRecordingStraightAway() async throws {
         let container = AppContainer.dummy(startPastOnboarding: true)
-        let vm = container.makeWordsPracticeViewModel(exerciseId: "words.three-letter")
+        let vm = container.makeWordsPracticeViewModel(exerciseId: "words.two-syllable")
         await vm.onAppear()
         vm.didTapRecord()
         try await Task.sleep(for: .milliseconds(100))   // permission checks run first

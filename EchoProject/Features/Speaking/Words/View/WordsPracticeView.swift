@@ -35,7 +35,7 @@ struct WordsPracticeView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
 
             SpeakingHeader(title: vm.word, subtitle: vm.instruction)
-            SpeakingAvatar(imageName: "img_speaking_words_child", size: 200)
+            SpeakingAvatar(imageName: "img_mia_calling", size: 200)
             middle
             Spacer(minLength: 0)
             bottomButtons
@@ -132,7 +132,7 @@ struct WordsPracticeView: View {
 #Preview("Words") {
     let container = AppContainer.dummy(startPastOnboarding: true)
     return NavigationStack {
-        WordsPracticeView(vm: container.makeWordsPracticeViewModel(exerciseId: "words.three-letter"))
+        WordsPracticeView(vm: container.makeWordsPracticeViewModel(exerciseId: "words.two-syllable"))
     }
     .environment(container)
     .environment(container.router)

@@ -90,23 +90,79 @@ extension DummyData {
         story(
             "pip-lost-marble",
             title: "Pip and the lost marble",
-            pages: ["TODO(copy) story text"],
-            events: ["TODO(copy) event 1", "TODO(copy) event 2", "TODO(copy) event 3"],
-            pairs: placeholderPairs("pip")
+            pages: [
+                """
+                Pip was a little blue bird with a shiny marble. \
+                He loved to roll it along the path. Roll, roll, roll! \
+                One day, the marble rolled far, far away. \
+                Pip looked and looked, but he could not find it. \
+                "Oh no! Where is my marble?" said Pip. \
+                Pip asked his friends for help. \
+                Bunny looked under the bush. Hop, hop! But the marble was not there. \
+                Squirrel looked up in the tree. But the marble was not there either. \
+                Then Pip saw something shining in the grass. Sparkle, sparkle! \
+                Pip found his marble! \
+                "Thank you for helping me, friends!" said Pip. \
+                And they all played with the marble together.
+                """
+            ],
+            events: ["Pip lost his marble.", "Bunny looked under the bush.", "Pip found his marble."],
+            pairs: [
+                MatchPair(id: "pip", who: "Pip", did: "Found the marble"),
+                MatchPair(id: "bunny", who: "Bunny", did: "Looked under the bush"),
+                MatchPair(id: "squirrel", who: "Squirrel", did: "Looked up in the tree")
+            ]
         ),
         story(
             "brave-firetruck",
             title: "The brave little firetruck",
-            pages: ["TODO(copy) story text"],
-            events: ["TODO(copy) event 1", "TODO(copy) event 2", "TODO(copy) event 3"],
-            pairs: placeholderPairs("firetruck")
+            pages: [
+                """
+                Little Red was a small firetruck with a big heart. \
+                One windy day, a little kitten climbed up a tall tree. Up, up, up! \
+                But then the kitten could not get down. She was stuck! \
+                "Meow! Meow!" cried the kitten. \
+                Mama Cat called for help. "Help! My kitten is stuck!" \
+                Little Red heard her. Nee-naw, nee-naw! \
+                Little Red raced to the tree as fast as she could. \
+                She raised her long ladder, higher and higher. \
+                The kitten climbed down the ladder, step by step. \
+                Mama Cat gave her kitten a big, warm hug. \
+                "Thank you, Little Red!" \
+                Little Red was small, but she was very brave.
+                """
+            ],
+            events: ["The kitten got stuck in the tree.", "Little Red raced to help.", "The kitten climbed down the ladder."],
+            pairs: [
+                MatchPair(id: "kitten", who: "Kitten", did: "Got stuck in the tree"),
+                MatchPair(id: "mama-cat", who: "Mama Cat", did: "Called for help"),
+                MatchPair(id: "firetruck", who: "Little Red", did: "Raised the ladder")
+            ]
         ),
         story(
             "olivia-starry-sky",
             title: "Olivia's starry sky",
-            pages: ["TODO(copy) story text"],
-            events: ["TODO(copy) event 1", "TODO(copy) event 2", "TODO(copy) event 3"],
-            pairs: placeholderPairs("olivia")
+            pages: [
+                """
+                It was bedtime, but Olivia could not sleep. \
+                She looked out of her window at the dark night sky. \
+                A friendly owl sat on a branch. \
+                "Hoo, hoo! Let's count the stars," said Owl. \
+                One, two, three twinkly stars! \
+                Olivia and Owl counted the stars together. \
+                The big round Moon smiled and sang a soft lullaby. La, la, la. \
+                Then, whoosh! A shooting star zoomed across the sky. \
+                Olivia closed her eyes and made a wish. \
+                She gave a big yawn and snuggled into bed. \
+                Goodnight, stars. Goodnight, Owl. Goodnight, Moon.
+                """
+            ],
+            events: ["Olivia could not sleep.", "Olivia and Owl counted the stars.", "Olivia made a wish."],
+            pairs: [
+                MatchPair(id: "olivia", who: "Olivia", did: "Made a wish"),
+                MatchPair(id: "owl", who: "Owl", did: "Counted the stars"),
+                MatchPair(id: "moon", who: "Moon", did: "Sang a lullaby")
+            ]
         ),
         Exercise(
             id: "comprehension.ordering",
@@ -127,8 +183,4 @@ extension DummyData {
             items: []
         )
     ]
-
-    private static func placeholderPairs(_ story: String) -> [MatchPair] {
-        (1...3).map { MatchPair(id: "\(story)-\($0)", who: "TODO(copy) who \($0)", did: "TODO(copy) did \($0)") }
-    }
 }

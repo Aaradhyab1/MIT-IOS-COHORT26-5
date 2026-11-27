@@ -44,4 +44,24 @@ struct DummyDataTests {
     @Test func quickCheckHasEightQuestions() {
         #expect(DummyData.quickCheckQuestions.count == 8)
     }
+
+    @Test func everyStoryHasItsTextAndQuestions() {
+        let stories = DummyData.comprehension.filter { $0.type == .storyPlayer }
+        #expect(stories.count == 4)
+
+        for story in stories {
+            let pages = story.items.filter { $0.options == nil }
+            let ordering = story.items.first { $0.id.hasSuffix(StoryItemSuffix.ordering) }
+            let matching = story.items.first { $0.id.hasSuffix(StoryItemSuffix.matching) }
+            let answers = story.items.first { $0.id.hasSuffix(StoryItemSuffix.matchingAnswers) }
+
+            #expect(!pages.isEmpty, "\(story.id) has no pages")
+            #expect(pages.allSatisfy { !($0.text ?? "").isEmpty && !($0.text ?? "").contains("TODO") }, "\(story.id) has placeholder text")
+            #expect(ordering?.options?.count == 3, "\(story.id) needs 3 events")
+            #expect(matching?.options?.count == 3, "\(story.id) needs 3 characters")
+            #expect(matching?.options?.map(\.id) == answers?.options?.map(\.id), "\(story.id) answers must match its characters")
+            let labels = (ordering?.options ?? []) + (matching?.options ?? []) + (answers?.options ?? [])
+            #expect(labels.allSatisfy { !$0.label.contains("TODO") }, "\(story.id) has placeholder answers")
+        }
+    }
 }

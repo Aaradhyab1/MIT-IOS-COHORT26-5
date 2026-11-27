@@ -30,7 +30,12 @@ extension DummyData {
             title: "Sentences",
             subtitle: "Read along and tap any word",                // TODO(copy)
             illustration: "level_sentences",
-            exerciseIds: ["sentences.sentence-1"]
+            exerciseIds: [
+                "sentences.simple-phrases",
+                "sentences.short-sentences",
+                "sentences.combined-sentences",
+                "sentences.paragraphs"
+            ]
         ),
         Level(
             id: "speaking.conversation",
@@ -154,18 +159,70 @@ extension DummyData {
             ]
         ),
 
-        // Sentences: read along, tap a word to hear it
+        // Sentences: read aloud while the words light up, tap a word to hear it.
+        // Each item is one passage; its options give syllables for longer words.
+        // Grouped by how the language is built, not by word count, and each category
+        // gets a little harder from its first passage to its last.
+
+        // Simple phrases: 3–5 words that are not a full sentence (no verb).
+        // Everyday expressions → a thing with a describing word → a longer naming phrase.
         Exercise(
-            id: "sentences.sentence-1", levelId: "speaking.sentences", type: .readAlong,
-            title: "Sentence 1", summary: "Read along, tap a word to hear it",     // TODO(copy)
-            illustration: "ex_sentence-1",
+            id: "sentences.simple-phrases", levelId: "speaking.sentences", type: .readAlong,
+            title: "Simple Phrases", summary: "Read short groups of words",
+            durationMinutes: 2,
+            illustration: "ex_sentences-simple-phrases",
+            repetitions: 5,
+            items: [
+                readingItem("phrase-good-night", "Good night, Grandma", syllables: ["grandma": "GRAND-ma"]),
+                readingItem("phrase-rainy-day", "A rainy day", syllables: ["rainy": "RAIN-y"]),
+                readingItem("phrase-pencil-box", "My new pencil box", syllables: ["pencil": "PEN-cil"]),
+                readingItem("phrase-teddy-bear", "My favourite teddy bear", syllables: ["favourite": "FA-vour-ite", "teddy": "TED-dy"]),
+                readingItem("phrase-cold-water", "A glass of cold water", syllables: ["water": "WA-ter"])
+            ]
+        ),
+
+        // Short sentences: one complete idea, simple words.
+        // A feeling → describing something → a plan with a place and a time.
+        Exercise(
+            id: "sentences.short-sentences", levelId: "speaking.sentences", type: .readAlong,
+            title: "Short Sentences", summary: "Read a sentence with one idea",
+            durationMinutes: 1,
+            illustration: "ex_sentences-short-sentences",
+            repetitions: 3,
+            items: [
+                readingItem("short-hungry", "I am hungry.", syllables: ["hungry": "HUN-gry"]),
+                readingItem("short-shoes", "My shoes are too small."),
+                readingItem("short-park", "We are going to the park today.", syllables: ["going": "GO-ing", "today": "to-DAY"])
+            ]
+        ),
+
+        // Combined sentences: two ideas joined by and, but, or, so.
+        // A "but" sentence → a longer "so" sentence.
+        Exercise(
+            id: "sentences.combined-sentences", levelId: "speaking.sentences", type: .readAlong,
+            title: "Combined Sentences", summary: "Join two ideas with and, but, or, so",
+            durationMinutes: 1,
+            illustration: "ex_sentences-combined-sentences",
+            repetitions: 2,
+            items: [
+                readingItem("combined-play-rain", "I want to play, but it is raining.", syllables: ["raining": "RAIN-ing"]),
+                readingItem("combined-cold-jacket", "I am cold, so I will wear my jacket.", syllables: ["jacket": "JACK-et"])
+            ]
+        ),
+
+        // Paragraphs: 3–5 connected sentences about one topic.
+        // A daily routine in three sentences.
+        Exercise(
+            id: "sentences.paragraphs", levelId: "speaking.sentences", type: .readAlong,
+            title: "Paragraphs", summary: "Read a few sentences about one topic",
+            durationMinutes: 2,
+            illustration: "ex_sentences-paragraphs",
             repetitions: 1,
             items: [
-                ExerciseItem(
-                    id: "sentence-1",
-                    audio: "snd_sentence-1",
-                    image: "img_sentence-1",
-                    text: "TODO(copy) sentence text from PRECODING"
+                readingItem(
+                    "paragraph-morning",
+                    "Every morning, I wake up early. I brush my teeth and eat my breakfast. Then Mom walks me to school.",
+                    syllables: ["every": "EV-ery", "morning": "MOR-ning", "early": "EAR-ly", "breakfast": "BREAK-fast"]
                 )
             ]
         ),
@@ -204,6 +261,17 @@ extension DummyData {
     ]
 
     // MARK: - Builders
+
+    /// A passage to read aloud. `syllables` tells the pronunciation sheet how to say
+    /// longer words ("morning" → "MOR-ning"); other words show in capitals ("DOG").
+    private static func readingItem(_ id: String, _ text: String, syllables: [String: String] = [:]) -> ExerciseItem {
+        ExerciseItem(
+            id: id,
+            prompt: "Read it aloud",
+            text: text,
+            options: syllables.sorted { $0.key < $1.key }.map { Option(id: $0.key, label: $0.value) }
+        )
+    }
 
     /// A conversation turn: the shopkeeper's question, the choices the child can say, and
     /// how the shopkeeper confirms an answer ("{choice}" is replaced by it).

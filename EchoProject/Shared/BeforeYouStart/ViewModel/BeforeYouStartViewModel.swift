@@ -80,7 +80,10 @@ final class BeforeYouStartViewModel {
         let firstItem = exercise.items.first
         let clip = firstItem?.audio ?? firstItem?.options?.first?.audio
         exampleClip = clip
-        canPlayExample = clip != nil
+        // Comprehension stories are narrated in full, so they don't offer an example.
+        let comprehensionTypes: [ExerciseType] = [.storyPlayer, .ordering, .matching]
+        let isComprehension = comprehensionTypes.contains(exercise.type)
+        canPlayExample = clip != nil && !isComprehension
     }
 
     // MARK: - Actions

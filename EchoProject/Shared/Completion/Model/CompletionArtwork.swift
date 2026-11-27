@@ -42,6 +42,9 @@ struct CompletionArtwork {
         case "listening.differentiation":
             // Echo with a checklist, in a white ring (Figma "Differentiation / Completion").
             return CompletionArtwork(images: ["img_elephant_practice"], width: 172, height: 172, lift: 45, circular: true)
+        case "listening.identification":
+            // Echo with a checklist, in a white ring (Figma "Instruments / Completion").
+            return CompletionArtwork(images: ["img_elephant_practice"], width: 172, height: 172, lift: 45, circular: true)
         case "listening.comprehension":
             return CompletionArtwork(images: ["img_story-complete"])
         case "speaking.words":

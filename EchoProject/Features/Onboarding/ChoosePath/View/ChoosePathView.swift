@@ -35,9 +35,8 @@ struct ChoosePathView: View {
     private var mainScreen: some View {
         ScrollView {
             VStack(spacing: 0) {
-                // Figma: "Art · Duo · Waving hello". Multiply hides the art's white backdrop.
+                // Figma: "Art · Duo · Waving hello".
                 EchoAssetImage(name: "img_duo_waving")
-                    .blendMode(.multiply)
                     .frame(width: 176, height: 176)
 
                 Text("Where should we start?")

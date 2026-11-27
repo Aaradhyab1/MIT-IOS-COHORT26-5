@@ -43,7 +43,6 @@ struct QuickCheckView: View {
 
             // Figma: "Art · Duo · Listening". Shrinks on small screens.
             EchoAssetImage(name: "img_duo_listening")
-                .blendMode(.multiply)
                 .frame(maxWidth: 176, maxHeight: 176)
                 .frame(maxWidth: .infinity)
         }

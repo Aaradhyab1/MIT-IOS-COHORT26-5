@@ -28,6 +28,7 @@ final class ListenAndRespondViewModel {
 
     private let exerciseId: String
     private let items: [ExerciseItem]
+    let story: DetectionStory
     private let audio: any AudioPlaybackService
     private let progress: any ProgressRepository
     private let router: AppRouter
@@ -41,6 +42,7 @@ final class ListenAndRespondViewModel {
     ) {
         self.exerciseId = exerciseId
         self.items = content.exercise(id: exerciseId)?.items ?? []
+        self.story = DetectionStory.forExercise(exerciseId)
         self.audio = audio
         self.progress = progress
         self.router = router
@@ -52,18 +54,22 @@ final class ListenAndRespondViewModel {
         switch phase {
         case .ready, .playing: return "Listen to the sound!"
         case .asking: return currentItem?.prompt ?? "Did you hear it?"
-        case .reveal: return hasSound ? "Hello, \(soundName)!" : "Nothing was hiding!"   // TODO(copy)
+        case .reveal:
+            guard hasSound else { return story.silentTitle }
+            return currentReveal?.title ?? "Hello, \(soundName)!"
         }
     }
 
     var subtitle: String? {
-        phase == .reveal && hasSound ? "I was hiding behind the bush." : nil
+        guard phase == .reveal else { return nil }
+        guard hasSound else { return story.silentSubtitle }
+        return currentReveal?.subtitle ?? "I was hiding behind the bush."
     }
 
     var bubbleTitle: String? {
         switch phase {
-        case .ready: return roundIndex == 0 ? "An animal is hiding." : "Is something hiding?"
-        case .playing: return "The animal is making a sound."
+        case .ready: return roundIndex == 0 ? story.readyLine : story.nextReadyLine
+        case .playing: return story.playingLine
         case .asking: return nil
         case .reveal: return lastAnswerCorrect ? "Nice listening!" : "Almost there!"
         }
@@ -74,18 +80,19 @@ final class ListenAndRespondViewModel {
         case .ready: return roundIndex == 0 ? "Tap Play to hear the sound." : "Tap Play to hear it."
         case .reveal:
             if lastAnswerCorrect {
-                return isLastRound ? "You heard both animals!" : "Let’s find another animal."
+                return isLastRound ? story.finishedLine : story.nextLine
             }
+            let what = hasSound ? "That was the \(soundName)." : "There was no sound this time."
             return isLastRound
-                ? "That was the \(soundName). You’re learning with every try!"
-                : "That was the \(soundName). Let’s try the next sound."
+                ? "\(what) You’re learning with every try!"
+                : "\(what) Let’s try the next sound."
         default: return nil
         }
     }
 
-    /// Animal that peeks out from behind the bush after the answer (nil = nothing shown).
+    /// Bush story: the animal that rises up from behind the bush after the answer.
     var revealImage: String? {
-        guard phase == .reveal, hasSound else { return nil }
+        guard story.hidingSpot == .bush, phase == .reveal, hasSound else { return nil }
         guard !lastAnswerCorrect else { return currentItem?.image }
 
         switch currentItem?.text?.lowercased() {
@@ -93,6 +100,12 @@ final class ListenAndRespondViewModel {
         case "dog": return "img_dog_worried"
         default: return currentItem?.image
         }
+    }
+
+    /// House story: the plain house until the answer, then the doorbell ringing (silent rounds stay plain).
+    var houseImage: String {
+        guard phase == .reveal, hasSound, let image = currentReveal?.houseImage else { return "img_house" }
+        return image
     }
 
     var roundText: String {
@@ -150,9 +163,14 @@ final class ListenAndRespondViewModel {
     private var hasSound: Bool { currentItem?.audio != nil }
     private var isLastRound: Bool { roundIndex >= items.count - 1 }
 
-    /// "dog" for the image "img_dog". A `text` on the item takes priority.
+    private var currentReveal: DetectionStory.Reveal? {
+        currentItem?.audio.flatMap { story.reveals[$0] }
+    }
+
+    /// "dog" for the image "img_dog". A `text` on the item, then the story, take priority.
     private var soundName: String {
         if let text = currentItem?.text { return text }
+        if let name = currentReveal?.name { return name }
         return (currentItem?.image ?? "friend").replacingOccurrences(of: "img_", with: "")
     }
 

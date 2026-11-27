@@ -70,18 +70,19 @@ enum PronunciationScorer {
     // MARK: - Judging a word
 
     /// Checks a single word against its accepted answers.
-    /// The child may say extra words ("it's a sun"); the best-matching word counts.
+    ///
+    /// The child must say only the word. Everything that was heard is compared with the
+    /// answer, so a sentence that contains it ("it's a sun") is not counted as right.
     static func judge(heard: String, accepted: [String]) -> WordVerdict {
-        let heardWhole = normalized(heard)
-        guard !heardWhole.isEmpty else { return .incorrect }
         let heardWords = words(in: heard)
+        guard !heardWords.isEmpty else { return .incorrect }
+        let heardWhole = heardWords.joined(separator: " ")
 
         var best = 0.0
         for answer in accepted.map(normalized) where !answer.isEmpty {
+            // Extra words mean it was not just the word.
+            guard heardWords.count == words(in: answer).count else { continue }
             best = max(best, similarity(heardWhole, answer))
-            for word in heardWords {
-                best = max(best, similarity(word, answer))
-            }
         }
 
         if best >= correctThreshold { return .correct }

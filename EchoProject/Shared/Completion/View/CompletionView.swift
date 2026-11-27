@@ -46,12 +46,22 @@ struct CompletionView: View {
         } else {
             HStack(alignment: .bottom, spacing: 18) {
                 ForEach(vm.friendImages, id: \.self) { name in
-                    Image(name)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 170, height: 174)
+                    if vm.artwork.circular {
+                        Image(name)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: vm.artwork.width, height: vm.artwork.height)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(.white, lineWidth: 4))
+                    } else {
+                        Image(name)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: vm.artwork.width, height: vm.artwork.height)
+                    }
                 }
             }
+            .offset(y: -vm.artwork.lift)
             .accessibilityHidden(true)
         }
     }

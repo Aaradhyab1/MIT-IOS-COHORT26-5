@@ -108,12 +108,15 @@ struct Option: Codable, Identifiable, Hashable {
     let image: String?
     let audio: String?
     let speaker: EchoCharacter?     // oddOneOut: Mia, Leo or Zoe "says" the sound
+    let pronunciation: String?      // Words: how this part sounds, in IPA ("ʌn" for "un")
 
-    init(id: String, label: String, image: String? = nil, audio: String? = nil, speaker: EchoCharacter? = nil) {
+    init(id: String, label: String, image: String? = nil, audio: String? = nil, speaker: EchoCharacter? = nil,
+         pronunciation: String? = nil) {
         self.id = id
         self.label = label
         self.image = image
         self.audio = audio
         self.speaker = speaker
+        self.pronunciation = pronunciation
     }
 }

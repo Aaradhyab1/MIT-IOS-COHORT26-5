@@ -18,6 +18,11 @@ protocol SpeechRecognitionService: AnyObject {
     /// What the child said, as plain text. Empty when nothing was understood.
     /// `expecting` lists the word or sentence the child is trying to say.
     func transcribe(_ recording: RecordingResult, expecting: [String]) async -> String
+    /// Live captions while the child is still talking: `onHeard` gets everything heard so
+    /// far, again and again. Lets a screen stop recording as soon as the answer is said.
+    /// Runs next to the recording; call `stopListening()` when the recording stops.
+    func startListening(expecting: [String], onHeard: @escaping @MainActor (String) -> Void)
+    func stopListening()
 }
 
 /// Real speech-to-text with Apple's SpeechAnalyzer (iOS 26), running fully on the iPhone.
@@ -231,6 +236,62 @@ final class LiveSpeechRecognitionService: SpeechRecognitionService {
         }
         return converted
     }
+
+    // MARK: - Live captions
+
+    private let liveEngine = AVAudioEngine()
+    private var liveRequest: SFSpeechAudioBufferRecognitionRequest?
+    private var liveTask: SFSpeechRecognitionTask?
+
+    /// Streams the microphone into Apple's SFSpeechRecognizer with partial results on.
+    func startListening(expecting: [String], onHeard: @escaping @MainActor (String) -> Void) {
+        stopListening()
+        guard let recognizer = legacyRecognizer, recognizer.isAvailable else {
+            print("[Echo speech] Live captions are not available.")
+            return
+        }
+        let request = SFSpeechAudioBufferRecognitionRequest()
+        request.shouldReportPartialResults = true
+        request.contextualStrings = expecting
+        if recognizer.supportsOnDeviceRecognition {
+            request.requiresOnDeviceRecognition = true
+        }
+
+        let input = liveEngine.inputNode
+        let format = input.outputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            print("[Echo speech] Live captions: no microphone input format.")
+            return
+        }
+        input.installTap(onBus: 0, bufferSize: 1_024, format: format) { @Sendable buffer, _ in
+            request.append(buffer)
+        }
+        liveEngine.prepare()
+        do {
+            try liveEngine.start()
+        } catch {
+            print("[Echo speech] Live captions could not start: \(error)")
+            input.removeTap(onBus: 0)
+            return
+        }
+
+        liveRequest = request
+        liveTask = recognizer.recognitionTask(with: request) { @Sendable result, _ in
+            guard let text = result?.bestTranscription.formattedString, !text.isEmpty else { return }
+            Task { @MainActor in onHeard(text) }
+        }
+    }
+
+    func stopListening() {
+        if liveEngine.isRunning {
+            liveEngine.stop()
+            liveEngine.inputNode.removeTap(onBus: 0)
+        }
+        liveRequest?.endAudio()
+        liveTask?.cancel()
+        liveRequest = nil
+        liveTask = nil
+    }
 }
 
 /// Pretends to understand the child perfectly, after a short pause.
@@ -247,5 +308,23 @@ final class DummySpeechRecognitionService: SpeechRecognitionService {
     func transcribe(_ recording: RecordingResult, expecting: [String]) async -> String {
         try? await Task.sleep(for: .milliseconds(600))
         return heardText ?? expecting.first ?? ""
+    }
+
+    private var listenTask: Task<Void, Never>?
+
+    /// Pretends the child finished speaking after 0.8 s.
+    func startListening(expecting: [String], onHeard: @escaping @MainActor (String) -> Void) {
+        listenTask?.cancel()
+        let text = heardText ?? expecting.first ?? ""
+        listenTask = Task {
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
+            onHeard(text)
+        }
+    }
+
+    func stopListening() {
+        listenTask?.cancel()
+        listenTask = nil
     }
 }

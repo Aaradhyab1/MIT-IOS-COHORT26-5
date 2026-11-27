@@ -24,10 +24,9 @@ final class SpeechStoryNarrationService: NSObject, StoryNarrationService {
 
     override init() {
         super.init()
-        voice = VoiceSettings.storytellerVoice()
+        voice = Self.storytellerVoice()
         synthesizer.delegate = self
         observeAudioSession()
-        observeVoiceDownloads()
     }
 
     deinit {
@@ -64,7 +63,10 @@ final class SpeechStoryNarrationService: NSObject, StoryNarrationService {
 
         for index in first..<sentences.count {
             let utterance = AVSpeechUtterance(string: sentences[index].text)
-            VoiceSettings.apply(to: utterance, voice: voice, speed: speed)
+            utterance.voice = voice
+            utterance.rate = speed.rate
+            utterance.pitchMultiplier = 1.1
+            utterance.postUtteranceDelay = StoryText.pauseAfterSentence
             utterances.append(utterance)
             queued[ObjectIdentifier(utterance)] = index
             synthesizer.speak(utterance)
@@ -129,6 +131,27 @@ final class SpeechStoryNarrationService: NSObject, StoryNarrationService {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
+    /// The best English voice on the device: highest quality first, then the device's
+    /// own English (for example en-IN), then US English. Novelty and personal voices are skipped.
+    private static func storytellerVoice() -> AVSpeechSynthesisVoice? {
+        let deviceLanguage = AVSpeechSynthesisVoice.currentLanguageCode()
+        let candidates = AVSpeechSynthesisVoice.speechVoices().filter { voice in
+            voice.language.hasPrefix("en")
+                && !voice.voiceTraits.contains(.isNoveltyVoice)
+                && !voice.voiceTraits.contains(.isPersonalVoice)
+        }
+        func score(_ voice: AVSpeechSynthesisVoice) -> Int {
+            var score = voice.quality.rawValue * 10
+            if voice.language == deviceLanguage {
+                score += 5
+            } else if voice.language == "en-US" {
+                score += 2
+            }
+            return score
+        }
+        return candidates.max { score($0) < score($1) } ?? AVSpeechSynthesisVoice(language: "en-US")
+    }
+
     // MARK: - Synthesizer callbacks
 
     private func utteranceStarted(_ id: ObjectIdentifier) {
@@ -189,16 +212,6 @@ final class SpeechStoryNarrationService: NSObject, StoryNarrationService {
         })
     }
 
-    /// A voice finished downloading (for example Isha Premium from Settings): switch to it
-    /// for the next sentence the child hears.
-    private func observeVoiceDownloads() {
-        observers.append(NotificationCenter.default.addObserver(
-            forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification, object: nil, queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.voice = VoiceSettings.storytellerVoice() }
-        })
-    }
-
     /// A call, Siri or an alarm takes the audio: pause and wait for the child to tap play.
     private func handleInterruption(_ rawType: UInt?) {
         guard let rawType, let type = AVAudioSession.InterruptionType(rawValue: rawType) else { return }
@@ -253,102 +266,5 @@ extension SpeechStoryNarrationService: AVSpeechSynthesizerDelegate {
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
         Task { @MainActor [weak self] in self?.reportIfReading(.resumed) }
-    }
-}
-
-// MARK: - Voice settings
-
-extension SpeechStoryNarrationService {
-    /// The one place that decides how every story sounds, so all stories use the same
-    /// voice, pace and pitch.
-    ///
-    /// Voice order (Indian English, built into iOS, no downloads from the internet by the app):
-    /// 1. Isha (Premium)   2. Isha (Enhanced)   3. Sangeeta (Enhanced)
-    /// 4. the best other en-IN voice on the device   5. the system's default en-IN, then en-US voice.
-    /// Premium and Enhanced voices appear once the family downloads them in
-    /// Settings › Accessibility › Spoken Content › Voices › English (India).
-    enum VoiceSettings {
-        enum Quality: Int, Comparable {
-            case standard = 1
-            case enhanced = 2
-            case premium = 3
-
-            static func < (lhs: Quality, rhs: Quality) -> Bool { lhs.rawValue < rhs.rawValue }
-        }
-
-        struct Preference: Equatable {
-            let name: String
-            let quality: Quality
-        }
-
-        /// What the app needs to know about an installed voice to choose between them.
-        struct Candidate: Equatable {
-            let identifier: String
-            let name: String
-            let language: String
-            let quality: Quality
-        }
-
-        static let language = "en-IN"
-
-        static let preferences: [Preference] = [
-            Preference(name: "Isha", quality: .premium),
-            Preference(name: "Isha", quality: .enhanced),
-            Preference(name: "Sangeeta", quality: .enhanced)
-        ]
-
-        /// A little slower than the chosen speed, so 5–8 year olds can follow every word.
-        static let kidsPace: Float = 0.94
-        /// A touch brighter than a neutral voice, without sounding cartoonish.
-        static let pitch: Float = 1.05
-        /// A breath before each sentence, so sentences never run into each other.
-        static let pauseBeforeSentence: TimeInterval = 0.08
-
-        /// Picks the narrator from the installed voices, following `preferences`.
-        static func choose(from candidates: [Candidate]) -> Candidate? {
-            let indian = candidates.filter { $0.language == language }
-            for preference in preferences {
-                if let match = indian.first(where: { matches($0, preference.name) && $0.quality == preference.quality }) {
-                    return match
-                }
-            }
-            return indian.max { $0.quality < $1.quality }
-        }
-
-        static func storytellerVoice() -> AVSpeechSynthesisVoice? {
-            let installed = AVSpeechSynthesisVoice.speechVoices().filter { voice in
-                !voice.voiceTraits.contains(.isNoveltyVoice) && !voice.voiceTraits.contains(.isPersonalVoice)
-            }
-            let candidates = installed.map { voice in
-                Candidate(
-                    identifier: voice.identifier,
-                    name: voice.name,
-                    language: voice.language,
-                    quality: Quality(rawValue: voice.quality.rawValue) ?? .standard
-                )
-            }
-            let chosen = choose(from: candidates).flatMap { AVSpeechSynthesisVoice(identifier: $0.identifier) }
-                ?? AVSpeechSynthesisVoice(language: language)
-                ?? AVSpeechSynthesisVoice(language: "en-US")
-            #if DEBUG
-            print("Story narrator voice:", chosen?.name ?? "system default", chosen?.identifier ?? "")
-            #endif
-            return chosen
-        }
-
-        static func apply(to utterance: AVSpeechUtterance, voice: AVSpeechSynthesisVoice?, speed: NarrationSpeed) {
-            utterance.voice = voice
-            utterance.rate = speed.rate * kidsPace
-            utterance.pitchMultiplier = pitch
-            utterance.preUtteranceDelay = pauseBeforeSentence
-            utterance.postUtteranceDelay = StoryText.pauseAfterSentence
-        }
-
-        /// Names can carry a suffix on some iOS versions ("Isha (Premium)"), and the
-        /// identifier always ends in the voice's name (com.apple.voice.premium.en-IN.Isha).
-        private static func matches(_ candidate: Candidate, _ name: String) -> Bool {
-            candidate.name.lowercased().hasPrefix(name.lowercased())
-                || candidate.identifier.lowercased().hasSuffix("." + name.lowercased())
-        }
     }
 }

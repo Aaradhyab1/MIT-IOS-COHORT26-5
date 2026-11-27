@@ -16,7 +16,6 @@ struct QuickCheckResultView: View {
             VStack(spacing: 0) {
                 // Figma: "Art · Duo · Celebrating", exported as one picture with its grass mound.
                 EchoAssetImage(name: "img_duo_celebrating")
-                    .blendMode(.multiply)   // the art's white backdrop disappears, as in Figma
                     .frame(width: 373, height: 259)
                     .padding(.top, 30)
                     .frame(height: 305, alignment: .top)

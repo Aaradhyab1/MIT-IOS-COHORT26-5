@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// Speaking tab home: Sounds, Words, Sentences and Conversation.
+/// Speaking tab home: greeting, Today's practice, the speech skills and Conversation time.
 /// Figma: Precoding_FINAL › 03 v3 · Home › Home · Speaking.
-/// TODO: Build the real layout from Figma. The level buttons below are temporary.
 struct SpeakingHomeView: View {
     @State private var vm: SpeakingHomeViewModel
 
@@ -11,17 +10,38 @@ struct SpeakingHomeView: View {
     }
 
     var body: some View {
-        PlaceholderScreen(title: "Speaking", note: "Sounds, Words, Sentences, Conversation")
-            .safeAreaInset(edge: .bottom) {
-                VStack(spacing: EchoSpacing.m) {
-                    ForEach(vm.rows) { row in
-                        Button(row.title) { vm.didTap(row) }
-                            .buttonStyle(.echoSecondary)
+        ScrollView {
+            VStack(spacing: EchoSpacing.section) {
+                HomeGreetingRow(greeting: vm.greeting, onProfile: vm.didTapProfile)
+                    .padding(.horizontal, EchoSpacing.screenHorizontal)
+
+                if let practice = vm.todaysPractice {
+                    TodayPracticeCard(practice: practice, onStart: vm.didTapStart) {
+                        LeoSpeakingArt()
                     }
+                    .padding(.horizontal, EchoSpacing.screenHorizontal)
                 }
-                .padding(.horizontal, EchoSpacing.screenHorizontal)
-                .padding(.bottom, EchoSpacing.l)
+
+                VStack(spacing: EchoSpacing.m) {
+                    EchoSectionHeader(title: "Your speech skills", subtitle: "Pick a skill, then say it out loud.")
+                        .padding(.horizontal, EchoSpacing.screenHorizontal)
+                    SkillCarousel(cards: vm.skillCards, onSelect: vm.didTapSkill)
+                }
+
+                if let conversation = vm.conversation {
+                    VStack(spacing: EchoSpacing.l) {
+                        EchoSectionHeader(title: "Conversation time", subtitle: "Practise talking about your day.")
+                        ConversationCard(info: conversation, onStart: vm.didTapStartTalking)
+                    }
+                    .padding(.horizontal, EchoSpacing.screenHorizontal)
+                }
             }
+            .padding(.top, 10)
+            .padding(.bottom, EchoSpacing.xxl)
+        }
+        .echoScreenBackground()
+        .toolbar(.hidden, for: .navigationBar)
+        .onAppear(perform: vm.refresh)
     }
 }
 

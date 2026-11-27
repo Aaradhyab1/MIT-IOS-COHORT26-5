@@ -6,8 +6,6 @@ import SwiftUI
 struct SplashView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var vm: SplashViewModel
-    /// Drives Echo's slow "breathing", standing in for the looping video clip.
-    @State private var isBreathing = false
 
     /// Side of the square Echo stands in ("Echo art", 210.6 pt in Figma).
     private let artSize: CGFloat = 210
@@ -36,12 +34,6 @@ struct SplashView: View {
         .task {
             await vm.didAppear(reduceMotion: reduceMotion)
         }
-        .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
-                isBreathing = true
-            }
-        }
         .onChange(of: vm.phase) { _, newPhase in
             guard newPhase == .done else { return }
             // Open About your child without the usual slide, so the hand-off reads as a dissolve.
@@ -65,21 +57,18 @@ struct SplashView: View {
                 .frame(width: glowSize * 1.3, height: glowSize * 1.3)
 
             ZStack(alignment: .topLeading) {
-                EchoGrassStage(size: artSize, showsFrontGrass: layout != .reveal) {
-                    EchoLoopingVideo(videoName: "echo_hero_loop", fallbackImage: "img_echo_hero")
-                        .echoFeatheredCircle()
-                        .blendMode(.multiply)   // the art's white backdrop disappears on the light screen
-                        // Gentle idle loop: grows 2 % and rises 3 pt, then back, every 1.6 s.
-                        .scaleEffect(isBreathing ? 1.02 : 1, anchor: .bottom)
-                        .offset(y: isBreathing ? -3 : 0)
-                }
+                // Figma "Echo art": Echo with his grass mound, exported as one transparent picture.
+                // It is 372 × 235 pt and starts 81 pt left of and 6 pt above the 210 pt square.
+                EchoAssetImage(name: "img_echo_art")
+                    .frame(width: 372, height: 235)
+                    .offset(x: -81, y: -6)
 
                 sparkle(size: 18, color: EchoColor.Paper.sunshine)
                     .offset(x: 0, y: 33)
                 sparkle(size: 12, color: EchoColor.Paper.lightBlue)
                     .offset(x: 204, y: -3)
             }
-            .frame(width: artSize, height: artSize)
+            .frame(width: artSize, height: artSize, alignment: .topLeading)
             .scaleEffect(layout == .entrance ? 0.533 : 1)
             .opacity(vm.phase == .entrance ? 0 : 1)
         }

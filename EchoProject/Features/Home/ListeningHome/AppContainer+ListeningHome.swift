@@ -6,6 +6,6 @@ import Foundation
 /// screen only edits files inside their own folder.
 extension AppContainer {
     func makeListeningHomeViewModel() -> ListeningHomeViewModel {
-        ListeningHomeViewModel(content: content, router: router)
+        ListeningHomeViewModel(content: content, profile: profile, progress: progress, router: router)
     }
 }

@@ -12,18 +12,17 @@ struct ChildProfileView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                // One exported picture: Leo with his cupcake, standing on the grass mound.
-                // Figma: "Art · Leo · Birthday cupcake" (226 × 154 pt including the grass).
-                EchoAssetImage(name: "img_leo_cupcake")
-                    .blendMode(.multiply)   // Leo's white backdrop disappears on the light screen, as in Figma
-                    .frame(width: 226, height: 154)
-                    .padding(.top, 95)
+                // Figma: "Art · Leo · Birthday cupcake" — Leo on the shared grass mound.
+                EchoGrassStage(size: 128, characterScale: 1.077, characterTop: -0.115) {
+                    EchoAssetImage(name: "img_leo_cupcake")
+                }
+                .padding(.top, 110)
 
                 Text("About your child")
                     .echoFont(.heading, .bold)
                     .foregroundStyle(EchoColor.textPrimary)
                     .accessibilityAddTraits(.isHeader)
-                    .padding(.top, 7)
+                    .padding(.top, 18)
 
                 Text("These dates help us pick the right practice.")
                     .echoFont(.supporting)

@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Listening tab home: Today's practice and the level journey.
+/// Listening tab home: greeting, Today's practice, this level's categories,
+/// games to replay, and the next level (locked).
 /// Figma: Precoding_FINAL › 03 v3 · Home › Home · Listening.
-/// TODO: Build the real layout from Figma. The level buttons below are temporary.
 struct ListeningHomeView: View {
     @State private var vm: ListeningHomeViewModel
 
@@ -11,17 +11,49 @@ struct ListeningHomeView: View {
     }
 
     var body: some View {
-        PlaceholderScreen(title: "Listening", note: "Today's practice and the level journey")
-            .safeAreaInset(edge: .bottom) {
-                VStack(spacing: EchoSpacing.m) {
-                    ForEach(vm.rows) { row in
-                        Button(row.title) { vm.didTap(row) }
-                            .buttonStyle(.echoSecondary)
+        ScrollView {
+            VStack(spacing: EchoSpacing.section) {
+                HomeGreetingRow(greeting: vm.greeting, onProfile: vm.didTapProfile)
+                    .padding(.horizontal, EchoSpacing.screenHorizontal)
+
+                if let practice = vm.todaysPractice {
+                    TodayPracticeCard(practice: practice, onStart: vm.didTapStart) {
+                        EchoHeroArt()
                     }
+                    .padding(.horizontal, EchoSpacing.screenHorizontal)
+                }
+
+                VStack(spacing: EchoSpacing.m) {
+                    EchoSectionHeader(
+                        title: vm.levelTitle,
+                        subtitle: vm.levelSubtitle,
+                        actionTitle: "See all",
+                        action: vm.didTapSeeAll
+                    )
+                    CategoryTilesRow(groups: vm.categories, onSelect: vm.didTapGroup)
                 }
                 .padding(.horizontal, EchoSpacing.screenHorizontal)
-                .padding(.bottom, EchoSpacing.l)
+
+                if !vm.reviewCards.isEmpty {
+                    VStack(spacing: EchoSpacing.m) {
+                        EchoSectionHeader(title: "Practise what you've learned", subtitle: vm.reviewSubtitle)
+                            .padding(.horizontal, EchoSpacing.screenHorizontal)
+                        ReviewCarousel(groups: vm.reviewCards, onSelect: vm.didTapGroup)
+                    }
+                }
+
+                if let upNext = vm.upNext {
+                    EchoLockedCard(eyebrow: upNext.eyebrow, title: upNext.title,
+                                   detail: upNext.detail, imageName: upNext.imageName)
+                        .padding(.horizontal, EchoSpacing.screenHorizontal)
+                }
             }
+            .padding(.top, 10)
+            .padding(.bottom, EchoSpacing.xxl)
+        }
+        .echoScreenBackground()
+        .toolbar(.hidden, for: .navigationBar)
+        .onAppear(perform: vm.refresh)
     }
 }
 

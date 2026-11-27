@@ -10,21 +10,21 @@ struct MainTabView: View {
         @Bindable var router = router
 
         TabView(selection: $router.selectedTab) {
-            Tab("Listening", systemImage: "ear", value: AppTab.listening) {
+            Tab("Listening", systemImage: "ear.fill", value: AppTab.listening) {
                 NavigationStack(path: $router.listeningPath) {
                     ListeningHomeView(vm: container.makeListeningHomeViewModel())
                         .withRouteDestinations()
                 }
             }
 
-            Tab("Speaking", systemImage: "waveform", value: AppTab.speaking) {
+            Tab("Speaking", systemImage: "microphone.fill", value: AppTab.speaking) {
                 NavigationStack(path: $router.speakingPath) {
                     SpeakingHomeView(vm: container.makeSpeakingHomeViewModel())
                         .withRouteDestinations()
                 }
             }
 
-            Tab("Progress", systemImage: "chart.bar", value: AppTab.progress) {
+            Tab("Progress", systemImage: "chart.bar.xaxis.ascending", value: AppTab.progress) {
                 NavigationStack(path: $router.progressPath) {
                     ProgressOverviewView(vm: container.makeProgressOverviewViewModel())
                         .withRouteDestinations()

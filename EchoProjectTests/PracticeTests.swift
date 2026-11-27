@@ -1,15 +1,16 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import EchoProject
 
 @MainActor
 struct BeforeYouStartViewModelTests {
-    private func makeViewModel(exerciseId: String, router: AppRouter = AppRouter(isOnboardingComplete: true)) -> BeforeYouStartViewModel {
+    private func makeViewModel(exerciseId: String, router: AppRouter? = nil) -> BeforeYouStartViewModel {
         BeforeYouStartViewModel(
             exerciseId: exerciseId,
             content: InMemoryContentRepository(),
             audio: DummyAudioPlaybackService(simulatedDuration: .zero),
-            router: router
+            router: router ?? AppRouter(isOnboardingComplete: true)
         )
     }
 
@@ -96,5 +97,19 @@ struct LeavePracticeTests {
         router.leavePractice()
 
         #expect(router.listeningPath.isEmpty)
+    }
+}
+
+@MainActor
+struct ComprehensionExampleTests {
+    @Test func comprehensionStoriesHaveNoHearAnExampleButton() {
+        let vm = BeforeYouStartViewModel(
+            exerciseId: "comprehension.story.cat-and-bird",
+            content: InMemoryContentRepository(),
+            audio: DummyAudioPlaybackService(simulatedDuration: .zero),
+            router: AppRouter(isOnboardingComplete: true)
+        )
+
+        #expect(!vm.canPlayExample)
     }
 }

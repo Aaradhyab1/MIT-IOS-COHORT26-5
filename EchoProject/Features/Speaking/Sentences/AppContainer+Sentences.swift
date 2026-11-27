@@ -6,6 +6,13 @@ import Foundation
 /// screen only edits files inside their own folder.
 extension AppContainer {
     func makeSentencesPracticeViewModel(exerciseId: String) -> SentencesPracticeViewModel {
-        SentencesPracticeViewModel(exerciseId: exerciseId, content: content, progress: progress, router: router)
+        SentencesPracticeViewModel(
+            exerciseId: exerciseId,
+            content: content,
+            reader: reader,
+            voice: voice,
+            progress: progress,
+            router: router
+        )
     }
 }

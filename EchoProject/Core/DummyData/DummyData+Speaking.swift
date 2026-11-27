@@ -30,7 +30,12 @@ extension DummyData {
             title: "Sentences",
             subtitle: "Read along and tap any word",                // TODO(copy)
             illustration: "level_sentences",
-            exerciseIds: ["sentences.sentence-1"]
+            exerciseIds: [
+                "sentences.two-word",
+                "sentences.three-word",
+                "sentences.expanding",
+                "sentences.short-stories"
+            ]
         ),
         Level(
             id: "speaking.conversation",
@@ -152,18 +157,64 @@ extension DummyData {
             ]
         ),
 
-        // Sentences: read along, tap a word to hear it
+        // Sentences: read aloud while the words light up, tap a word to hear it.
+        // Each item is one passage; its options give syllables for longer words.
         Exercise(
-            id: "sentences.sentence-1", levelId: "speaking.sentences", type: .readAlong,
-            title: "Sentence 1", summary: "Read along, tap a word to hear it",     // TODO(copy)
-            illustration: "ex_sentence-1",
-            repetitions: 1,
+            id: "sentences.two-word", levelId: "speaking.sentences", type: .readAlong,
+            title: "2 word combinations", summary: "Read two words together",
+            durationMinutes: 3,
+            illustration: "ex_sentences-two-word",
+            repetitions: 4,
             items: [
-                ExerciseItem(
-                    id: "sentence-1",
-                    audio: "snd_sentence-1",
-                    image: "img_sentence-1",
-                    text: "TODO(copy) sentence text from PRECODING"
+                readingItem("two-word-1", "Big dog."),
+                readingItem("two-word-2", "Red ball."),
+                readingItem("two-word-3", "Happy cat.", syllables: ["happy": "HAP-py"]),
+                readingItem("two-word-4", "More milk.")
+            ]
+        ),
+        Exercise(
+            id: "sentences.three-word", levelId: "speaking.sentences", type: .readAlong,
+            title: "3 word phrases", summary: "Read short three-word phrases",
+            durationMinutes: 3,
+            illustration: "ex_sentences-three-word",
+            repetitions: 4,
+            items: [
+                readingItem("three-word-1", "I see Mom."),
+                readingItem("three-word-2", "We eat apples.", syllables: ["apples": "AP-ples"]),
+                readingItem("three-word-3", "Birds can fly."),
+                readingItem("three-word-4", "Pip is sleepy.", syllables: ["sleepy": "SLEEP-y"])
+            ]
+        ),
+        Exercise(
+            id: "sentences.expanding", levelId: "speaking.sentences", type: .readAlong,
+            title: "Expanding sentences", summary: "Each sentence grows a little longer",
+            durationMinutes: 4,
+            illustration: "ex_sentences-expanding",
+            repetitions: 3,
+            items: [
+                readingItem("expanding-1", "The cat sleeps."),
+                readingItem("expanding-2", "The little cat sleeps.", syllables: ["little": "LIT-tle"]),
+                readingItem("expanding-3", "The little cat sleeps on the soft mat.", syllables: ["little": "LIT-tle"])
+            ]
+        ),
+        Exercise(
+            id: "sentences.short-stories", levelId: "speaking.sentences", type: .readAlong,
+            title: "Short Stories & nursery rhymes", summary: "Read a short story or rhyme",
+            durationMinutes: 5,
+            illustration: "ex_sentences-short-stories",
+            repetitions: 2,
+            items: [
+                readingItem(
+                    "story-morning",
+                    "Every morning, I wake up early. I brush my teeth and get ready for school. I enjoy spending time with my friends.",
+                    syllables: ["every": "EV-ery", "morning": "MOR-ning", "early": "EAR-ly", "ready": "READ-y",
+                                "enjoy": "en-JOY", "spending": "SPEND-ing"]
+                ),
+                readingItem(
+                    "rhyme-twinkle",
+                    "Twinkle, twinkle, little star, how I wonder what you are! Up above the world so high, like a diamond in the sky.",
+                    syllables: ["twinkle": "TWIN-kle", "little": "LIT-tle", "wonder": "WON-der",
+                                "above": "a-BOVE", "diamond": "DI-a-mond"]
                 )
             ]
         ),
@@ -183,6 +234,17 @@ extension DummyData {
     ]
 
     // MARK: - Builders
+
+    /// A passage to read aloud. `syllables` tells the pronunciation sheet how to say
+    /// longer words ("morning" → "MOR-ning"); other words show in capitals ("DOG").
+    private static func readingItem(_ id: String, _ text: String, syllables: [String: String] = [:]) -> ExerciseItem {
+        ExerciseItem(
+            id: id,
+            prompt: "Read it aloud",
+            text: text,
+            options: syllables.sorted { $0.key < $1.key }.map { Option(id: $0.key, label: $0.value) }
+        )
+    }
 
     /// A word to say, broken into parts for pronunciation help.
     ///

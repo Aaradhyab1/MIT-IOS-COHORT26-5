@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import EchoProject
 
@@ -6,11 +7,11 @@ import Testing
 struct LevelLibraryTests {
     private func makeViewModel(
         levelId: String,
-        router: AppRouter = AppRouter(isOnboardingComplete: true)
+        router: AppRouter? = nil
     ) -> LevelLibraryViewModel {
         let content = InMemoryContentRepository()
         let progress = InMemoryProgressRepository(content: content, sessions: [], progress: [])
-        return LevelLibraryViewModel(levelId: levelId, content: content, progress: progress, router: router)
+        return LevelLibraryViewModel(levelId: levelId, content: content, progress: progress, router: router ?? AppRouter(isOnboardingComplete: true))
     }
 
     private func sections(_ vm: LevelLibraryViewModel) -> [LevelLibraryViewModel.Section] {

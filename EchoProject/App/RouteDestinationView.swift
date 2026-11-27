@@ -59,7 +59,9 @@ struct RouteDestinationView: View {
 
         // Speaking — Features/Speaking/<Category>
         case .listenAndRecord:
-            if container.levelId(for: exerciseId) == "speaking.words" {
+            if exerciseId == "sounds.vowel" {
+                VowelPracticeView(vm: container.makeVowelPracticeViewModel(exerciseId: exerciseId))
+            } else if container.levelId(for: exerciseId) == "speaking.words" {
                 WordsPracticeView(vm: container.makeWordsPracticeViewModel(exerciseId: exerciseId))
             } else {
                 SoundsPracticeView(vm: container.makeSoundsPracticeViewModel(exerciseId: exerciseId))

@@ -78,27 +78,28 @@ extension DummyData {
         ),
 
         // Words: listen, say the word once, checked with speech recognition (Figma: 12 · Speech — Words).
-        // Grouped by syllables (beats): 1, 2, 3, then 4 or more. Each exercise holds 12 words;
+        // Grouped by syllables (beats): 1, 2, 3, then 4 or more, each list shortest word first.
+        // Each exercise holds 12 words;
         // every practice picks 5 of them at random (WordsPracticeViewModel.wordsPerSession).
-        // Multi-syllable words are split into their syllables; one-syllable words into
-        // first sound + the rest, so pronunciation help always has parts to say.
+        // Pronunciation help splits every word by syllable: "dog" stays one part,
+        // "ap · ple" is two, "ba · na · na" is three.
         Exercise(
             id: "words.one-syllable", levelId: "speaking.words", type: .listenAndRecord,
             title: "1 syllable", summary: "One beat, like Sun",                     // TODO(copy)
             illustration: "img_1_syllable",
             items: [
-                wordItem("Sun", parts: [("S", "s"), ("UN", "ʌn")], accepted: ["sun", "son"]),
-                wordItem("Cat", parts: [("C", "k"), ("AT", "æt")]),
-                wordItem("Dog", parts: [("D", "d"), ("OG", "ɔɡ")]),
-                wordItem("Ball", parts: [("B", "b"), ("ALL", "ɔl")]),
-                wordItem("Fish", parts: [("F", "f"), ("ISH", "ɪʃ")]),
-                wordItem("Duck", parts: [("D", "d"), ("UCK", "ʌk")]),
-                wordItem("Milk", parts: [("M", "m"), ("ILK", "ɪlk")]),
-                wordItem("Frog", parts: [("FR", "fɹ"), ("OG", "ɑɡ")]),
-                wordItem("Book", parts: [("B", "b"), ("OOK", "ʊk")]),
-                wordItem("Cake", parts: [("C", "k"), ("AKE", "eɪk")]),
-                wordItem("Tree", parts: [("TR", "tɹ"), ("EE", "i")]),
-                wordItem("Star", parts: [("ST", "st"), ("AR", "ɑɹ")])
+                wordItem("Sun", parts: [("SUN", "sun")], accepted: ["sun", "son"]),
+                wordItem("Cat", parts: [("CAT", "cat")]),
+                wordItem("Dog", parts: [("DOG", "dog")]),
+                wordItem("Fish", parts: [("FISH", "fish")]),
+                wordItem("Duck", parts: [("DUCK", "duck")]),
+                wordItem("Book", parts: [("BOOK", "book")]),
+                wordItem("Cake", parts: [("CAKE", "cake")]),
+                wordItem("Ball", parts: [("BALL", "ball")]),
+                wordItem("Milk", parts: [("MILK", "milk")]),
+                wordItem("Tree", parts: [("TREE", "tree")]),
+                wordItem("Frog", parts: [("FROG", "frog")]),
+                wordItem("Star", parts: [("STAR", "star")])
             ]
         ),
         Exercise(
@@ -106,18 +107,18 @@ extension DummyData {
             title: "2 syllables", summary: "Two beats, like Ap-ple",                // TODO(copy)
             illustration: "img_2_syllable",
             items: [
-                wordItem("Apple", parts: [("AP", "æp"), ("PLE", "pəl")]),
-                wordItem("Tiger", parts: [("TI", "taɪ"), ("GER", "ɡɚ")]),
-                wordItem("Water", parts: [("WA", "wɔ"), ("TER", "tɚ")]),
-                wordItem("Happy", parts: [("HAP", "hæp"), ("PY", "pi")]),
-                wordItem("Pencil", parts: [("PEN", "pɛn"), ("CIL", "səl")]),
-                wordItem("Rabbit", parts: [("RAB", "ɹæb"), ("BIT", "bɪt")]),
-                wordItem("Flower", parts: [("FLOW", "flaʊ"), ("ER", "ɚ")], accepted: ["flower", "flour"]),
-                wordItem("Monkey", parts: [("MON", "mʌŋ"), ("KEY", "ki")]),
-                wordItem("Window", parts: [("WIN", "wɪn"), ("DOW", "doʊ")]),
-                wordItem("Baby", parts: [("BA", "beɪ"), ("BY", "bi")]),
-                wordItem("Lion", parts: [("LI", "laɪ"), ("ON", "ən")]),
-                wordItem("Orange", parts: [("OR", "ɔɹ"), ("ANGE", "ɪndʒ")])
+                wordItem("Baby", parts: [("BA", "bay"), ("BY", "bee")]),
+                wordItem("Lion", parts: [("LI", "lie"), ("ON", "un")]),
+                wordItem("Apple", parts: [("AP", "ap"), ("PLE", "pull")]),
+                wordItem("Tiger", parts: [("TI", "tie"), ("GER", "gur")]),
+                wordItem("Water", parts: [("WA", "wah"), ("TER", "ter")]),
+                wordItem("Happy", parts: [("HA", "ha"), ("PPY", "pee")]),
+                wordItem("Monkey", parts: [("MON", "mun"), ("KEY", "key")]),
+                wordItem("Window", parts: [("WIN", "win"), ("DOW", "doe")]),
+                wordItem("Pencil", parts: [("PEN", "pen"), ("CIL", "sull")]),
+                wordItem("Rabbit", parts: [("RA", "rah"), ("BBIT", "bit")]),
+                wordItem("Flower", parts: [("FLOW", "flaow"), ("ER", "er")], accepted: ["flower", "flour"]),
+                wordItem("Orange", parts: [("OR", "or"), ("ANGE", "inj")])
             ]
         ),
         Exercise(
@@ -125,18 +126,18 @@ extension DummyData {
             title: "3 syllables", summary: "Three beats, like Ba-na-na",            // TODO(copy)
             illustration: "img_3_syllable",
             items: [
-                wordItem("Banana", parts: [("BA", "bə"), ("NA", "næ"), ("NA", "nə")]),
-                wordItem("Elephant", parts: [("EL", "ɛl"), ("E", "ə"), ("PHANT", "fənt")]),
-                wordItem("Butterfly", parts: [("BUT", "bʌ"), ("TER", "tɚ"), ("FLY", "flaɪ")]),
-                wordItem("Dinosaur", parts: [("DI", "daɪ"), ("NO", "nə"), ("SAUR", "sɔɹ")]),
-                wordItem("Tomato", parts: [("TO", "tə"), ("MA", "meɪ"), ("TO", "toʊ")]),
-                wordItem("Kangaroo", parts: [("KAN", "kæŋ"), ("GA", "ɡə"), ("ROO", "ɹu")]),
-                wordItem("Octopus", parts: [("OC", "ɑk"), ("TO", "tə"), ("PUS", "pʊs")]),
-                wordItem("Umbrella", parts: [("UM", "ʌm"), ("BREL", "bɹɛ"), ("LA", "lə")]),
-                wordItem("Bicycle", parts: [("BI", "baɪ"), ("CY", "sɪ"), ("CLE", "kəl")]),
-                wordItem("Pineapple", parts: [("PINE", "paɪn"), ("AP", "æ"), ("PLE", "pəl")]),
-                wordItem("Strawberry", parts: [("STRAW", "stɹɔ"), ("BER", "bɛ"), ("RY", "ɹi")]),
-                wordItem("Computer", parts: [("COM", "kəm"), ("PU", "pju"), ("TER", "tɚ")])
+                wordItem("Banana", parts: [("BA", "buh"), ("NA", "nan"), ("NA", "nuh")]),
+                wordItem("Tomato", parts: [("TO", "tuh"), ("MA", "may"), ("TO", "toe")]),
+                wordItem("Octopus", parts: [("OC", "ock"), ("TO", "tuh"), ("PUS", "puss")]),
+                wordItem("Bicycle", parts: [("BI", "bye"), ("CY", "sih"), ("CLE", "kul")]),
+                wordItem("Dinosaur", parts: [("DI", "die"), ("NO", "nuh"), ("SAUR", "sore")]),
+                wordItem("Elephant", parts: [("E", "eh"), ("LE", "luh"), ("PHANT", "funt")]),
+                wordItem("Kangaroo", parts: [("KAN", "kang"), ("GA", "guh"), ("ROO", "roo")]),
+                wordItem("Umbrella", parts: [("UM", "um"), ("BREL", "brel"), ("LA", "luh")]),
+                wordItem("Computer", parts: [("COM", "kum"), ("PU", "pew"), ("TER", "ter")]),
+                wordItem("Pineapple", parts: [("PINE", "pine"), ("AP", "ap"), ("PLE", "pull")]),
+                wordItem("Butterfly", parts: [("BU", "buh"), ("TTER", "ter"), ("FLY", "fly")]),
+                wordItem("Strawberry", parts: [("STRAW", "straw"), ("BE", "beh"), ("RRY", "ree")])
             ]
         ),
         Exercise(
@@ -144,18 +145,18 @@ extension DummyData {
             title: "4 syllables & more", summary: "Long words, like Wa-ter-mel-on",  // TODO(copy)
             illustration: "img_4_or_more_syllable",
             items: [
-                wordItem("Watermelon", parts: [("WA", "wɔ"), ("TER", "tɚ"), ("MEL", "mɛ"), ("ON", "lən")]),
-                wordItem("Caterpillar", parts: [("CAT", "kæ"), ("ER", "tɚ"), ("PIL", "pɪ"), ("LAR", "lɚ")]),
-                wordItem("Alligator", parts: [("AL", "æ"), ("LI", "lə"), ("GA", "ɡeɪ"), ("TOR", "tɚ")]),
-                wordItem("Helicopter", parts: [("HEL", "hɛ"), ("I", "lə"), ("COP", "kɑp"), ("TER", "tɚ")]),
-                wordItem("Avocado", parts: [("AV", "æ"), ("O", "və"), ("CA", "kɑ"), ("DO", "doʊ")]),
-                wordItem("Macaroni", parts: [("MAC", "mæ"), ("A", "kə"), ("RO", "ɹoʊ"), ("NI", "ni")]),
-                wordItem("Television", parts: [("TEL", "tɛ"), ("E", "lə"), ("VI", "vɪ"), ("SION", "ʒən")]),
-                wordItem("Calculator", parts: [("CAL", "kæl"), ("CU", "kjə"), ("LA", "leɪ"), ("TOR", "tɚ")]),
-                wordItem("Harmonica", parts: [("HAR", "hɑɹ"), ("MON", "mɑ"), ("I", "nɪ"), ("CA", "kə")]),
-                wordItem("Escalator", parts: [("ES", "ɛs"), ("CA", "kə"), ("LA", "leɪ"), ("TOR", "tɚ")]),
-                wordItem("Activity", parts: [("AC", "æk"), ("TIV", "tɪ"), ("I", "vɪ"), ("TY", "ti")]),
-                wordItem("Hippopotamus", parts: [("HIP", "hɪ"), ("PO", "pə"), ("POT", "pɑ"), ("A", "tə"), ("MUS", "məs")])
+                wordItem("Avocado", parts: [("A", "ah"), ("VO", "voh"), ("CA", "kah"), ("DO", "doe")]),
+                wordItem("Activity", parts: [("AC", "ack"), ("TI", "tih"), ("VI", "vih"), ("TY", "tee")]),
+                wordItem("Macaroni", parts: [("MA", "mah"), ("CA", "kuh"), ("RO", "roe"), ("NI", "nee")]),
+                wordItem("Alligator", parts: [("A", "ah"), ("LLI", "lih"), ("GA", "gay"), ("TOR", "ter")]),
+                wordItem("Escalator", parts: [("ES", "ess"), ("CA", "kuh"), ("LA", "lay"), ("TOR", "ter")]),
+                wordItem("Harmonica", parts: [("HAR", "har"), ("MO", "mah"), ("NI", "nih"), ("CA", "kuh")]),
+                wordItem("Watermelon", parts: [("WA", "wah"), ("TER", "ter"), ("ME", "meh"), ("LON", "lun")]),
+                wordItem("Helicopter", parts: [("HE", "heh"), ("LI", "lih"), ("COP", "kop"), ("TER", "ter")]),
+                wordItem("Calculator", parts: [("CAL", "kal"), ("CU", "kyuh"), ("LA", "lay"), ("TOR", "ter")]),
+                wordItem("Television", parts: [("TE", "teh"), ("LE", "luh"), ("VI", "vih"), ("SION", "zhun")]),
+                wordItem("Caterpillar", parts: [("CA", "ka"), ("TER", "ter"), ("PI", "pih"), ("LLAR", "ler")]),
+                wordItem("Hippopotamus", parts: [("HI", "hih"), ("PPO", "poh"), ("PO", "pah"), ("TA", "tuh"), ("MUS", "muss")])
             ]
         ),
 
@@ -300,14 +301,16 @@ extension DummyData {
 
     /// A word to say, broken into parts for pronunciation help.
     ///
-    /// Each part is (chip text, IPA sound): one per syllable for longer words ("AP" + "PLE"),
-    /// first sound + the rest for one-syllable words ("S" + "UN"). The IPA makes the voice say the
-    /// sound itself ("sss"), not the letter name ("ess"). The hint shown to the parent,
+    /// Each part is (chip text, how it sounds), one part per syllable: "AP" + "PLE" said
+    /// "ap", "pull". A one-syllable word is a single part, said as the word itself ("dog"). The sound is spelled like a word so the voice says it
+    /// smoothly. The hint shown to the parent,
     /// e.g. "s · un → sun", is built from the chips.
     /// `accepted` lists what counts as said right; it defaults to the word itself.
-    private static func wordItem(_ word: String, parts: [(chip: String, ipa: String)], accepted: [String]? = nil) -> ExerciseItem {
+    private static func wordItem(_ word: String, parts: [(chip: String, sound: String)], accepted: [String]? = nil) -> ExerciseItem {
         let id = word.lowercased()
-        let hint = parts.map { $0.chip.lowercased() }.joined(separator: " · ") + " → " + id
+        let hint = parts.count > 1
+            ? parts.map { $0.chip.lowercased() }.joined(separator: " · ") + " → " + id
+            : id
         return ExerciseItem(
             id: "word-\(id)",
             prompt: "Listen, then say the word",
@@ -315,7 +318,7 @@ extension DummyData {
             image: "img_word-\(id)",
             text: word,
             options: parts.enumerated().map { index, part in
-                Option(id: "\(id)-\(index)", label: part.chip, pronunciation: part.ipa)
+                Option(id: "\(id)-\(index)", label: part.chip, pronunciation: part.sound)
             },
             hint: hint,
             acceptedAnswers: accepted ?? [id]

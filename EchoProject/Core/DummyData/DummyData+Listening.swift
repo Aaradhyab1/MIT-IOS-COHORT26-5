@@ -142,7 +142,7 @@ extension DummyData {
             title: "Odd Sound Out",
             summary: "Which one sounds different?",
             collection: "Which One Sounds Different",
-            illustration: "img_leo_calling",       // TODO(art): swap for an Odd Sound Out thumbnail
+            illustration: "ex_odd-sound-out",
             items: [
                 oddOneOutItem("odd-1", prompt: "Who said a different word?", odd: .leo),
                 oddOneOutItem("odd-2", prompt: "Who said a different word?", odd: .zoe)

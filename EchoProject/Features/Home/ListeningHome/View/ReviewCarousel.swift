@@ -10,7 +10,9 @@ struct ReviewCarousel: View {
             LazyHStack(spacing: EchoSpacing.m) {
                 ForEach(groups) { group in
                     EchoExerciseCard(title: group.title, meta: group.metaText,
-                                     imageName: group.imageName, action: { onSelect(group) })
+                                     imageName: group.imageName,
+                                     artworkOpacity: ListeningHomeStyle.artworkOpacity,
+                                     action: { onSelect(group) })
                 }
             }
             .padding(.top, EchoSpacing.xs)

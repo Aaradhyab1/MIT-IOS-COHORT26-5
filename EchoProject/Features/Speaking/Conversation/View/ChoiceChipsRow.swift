@@ -12,6 +12,7 @@ struct ChoiceChipsRow: View {
                 HStack(spacing: EchoSpacing.xs) {
                     ConversationImageSlot(imageName: choice.imageName)
                         .frame(width: 28, height: 28)
+                        .clipShape(Circle())
                     Text(choice.label)
                         .echoFont(.supporting, .semibold)
                         .foregroundStyle(EchoColor.textPrimary)

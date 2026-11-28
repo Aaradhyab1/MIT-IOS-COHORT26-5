@@ -78,10 +78,7 @@ struct ConversationTests {
     /// Start, wait for the shopkeeper, record, stop, wait for checking.
     private func answerFirstTurn(_ vm: ConversationViewModel) async throws {
         vm.didTapStart()
-        try await Task.sleep(for: .milliseconds(900))     // shopkeeper says the question
-        #expect(vm.phase == .yourTurn)
-        vm.didTapSpeak()
-        try await Task.sleep(for: .milliseconds(100))
+        try await Task.sleep(for: .milliseconds(900))     // shopkeeper asks, recording starts by itself
         #expect(vm.phase == .recording)
         vm.didTapStop()
         try await Task.sleep(for: .milliseconds(800))     // speech recognition
@@ -122,8 +119,7 @@ struct ConversationTests {
     @Test func recordingStopsByItselfOneSecondAfterAChoiceIsHeard() async throws {
         let (vm, _) = makeViewModel(heard: "chocolate please")
         vm.didTapStart()
-        try await Task.sleep(for: .milliseconds(900))     // shopkeeper says the question
-        vm.didTapSpeak()
+        try await Task.sleep(for: .milliseconds(900))     // shopkeeper asks, recording starts by itself
         try await Task.sleep(for: .milliseconds(1_200))   // heard after 0.8 s, still waiting 1 s
         #expect(vm.phase == .recording)
         try await Task.sleep(for: .milliseconds(1_500))   // stopped and checked

@@ -3,8 +3,8 @@ import SwiftUI
 /// Vowel sounds practice: meet a sound friend, say its sound 3 times to bring it home.
 /// Figma: speech_temp › 14 · Speech — Sounds flow v2.
 ///
-/// All artwork uses `EchoAssetImage`, so each picture shows a labelled placeholder until
-/// its asset (e.g. "img_vowel_plane") is added to Assets.xcassets.
+/// Artwork comes from Assets.xcassets; the path's goal falls back to a native drawing
+/// (`GoalArt`) until its picture is added.
 struct VowelPracticeView: View {
     @State private var vm: VowelPracticeViewModel
 
@@ -15,11 +15,14 @@ struct VowelPracticeView: View {
     var body: some View {
         VStack(spacing: 0) {
             positionLabel
-            SpeakingHeader(title: vm.title, subtitle: vm.subtitle)
+            header
                 .padding(.top, EchoSpacing.s)
             artwork
                 .frame(maxHeight: .infinity)
             controls
+                // Same height as the mic button in every state, so swapping buttons never
+                // moves the artwork above.
+                .frame(minHeight: 84)
                 .padding(.bottom, EchoSpacing.xxl)
         }
         .padding(.horizontal, EchoSpacing.screenHorizontal)
@@ -41,6 +44,17 @@ struct VowelPracticeView: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
             .opacity(showsPosition ? 1 : 0)
             .accessibilityHidden(!showsPosition)
+    }
+
+    /// Title and subtitle. A hidden two-line copy reserves the same height in every state,
+    /// so a one-line subtitle ("Say “aaa” again!") doesn't pull the path up.
+    private var header: some View {
+        ZStack(alignment: .top) {
+            SpeakingHeader(title: "Title", subtitle: "Line one\nLine two")
+                .hidden()
+                .accessibilityHidden(true)
+            SpeakingHeader(title: vm.title, subtitle: vm.subtitle)
+        }
     }
 
     // MARK: - Middle
@@ -96,6 +110,13 @@ struct VowelPracticeView: View {
             SoundPathView(stops: vm.stops, progress: vm.pathProgress,
                           travelImage: vm.friend.travelImage, goalImage: vm.friend.goalImage)
                 .frame(height: 220)
+            // After a try that didn't count, "Listen again" sits above the stars (Figma).
+            // Its space is always kept, so the path and stars never shift when it appears.
+            let showsReplay = vm.phase == .tryAgain
+            SpeakingReplayButton(label: "Listen again", action: vm.didTapListenAgain)
+                .opacity(showsReplay ? 1 : 0)
+                .disabled(!showsReplay)
+                .accessibilityHidden(!showsReplay)
             SayItCounter(count: vm.goodTries, total: VowelPracticeViewModel.triesPerFriend)
         }
     }
@@ -115,11 +136,7 @@ struct VowelPracticeView: View {
         case .ready, .listening:
             VowelMicButton(isActive: vm.isMicActive, action: vm.didTapMicrophone)
         case .tryAgain:
-            HStack(alignment: .top, spacing: EchoSpacing.xxl) {
-                SpeakingReplayButton(label: "Listen again", action: vm.didTapListenAgain)
-                VowelMicButton(isActive: false, action: vm.didTapMicrophone)
-                Color.clear.frame(width: 52, height: 52)
-            }
+            VowelMicButton(isActive: false, action: vm.didTapMicrophone)
         case .reachedGoal:
             Button(vm.nextButtonTitle, action: vm.didTapNext)
                 .buttonStyle(.echoPrimary)

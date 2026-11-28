@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "ex_speech-sound-pattern.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

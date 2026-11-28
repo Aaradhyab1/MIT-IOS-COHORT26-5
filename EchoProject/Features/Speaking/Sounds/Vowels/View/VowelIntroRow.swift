@@ -6,7 +6,7 @@ struct VowelIntroRow: View {
 
     var body: some View {
         HStack(spacing: EchoSpacing.l) {
-            EchoAssetImage(name: step.icon)
+            icon
                 .frame(width: 52, height: 52)
             Text(step.title)
                 .echoFont(.body, .semibold)
@@ -21,5 +21,20 @@ struct VowelIntroRow: View {
                 .strokeBorder(EchoColor.surfaceStroke, lineWidth: 1.5)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private var icon: some View {
+        switch step.icon {
+        case .symbol(let name):
+            Image(systemName: name)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(EchoColor.accent)
+                .frame(width: 52, height: 52)
+                .background(EchoColor.Paper.sky, in: Circle())
+                .accessibilityHidden(true)
+        case .image(let name):
+            EchoAssetImage(name: name)
+        }
     }
 }

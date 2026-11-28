@@ -23,7 +23,7 @@ struct SentencesCompletionView: View {
             // The kids stand behind the card, which covers the bottom of their shirts
             // (Figma: kids at y 140–356, card from y 334, so a 22 pt overlap).
             ZStack(alignment: .top) {
-                Image("img_sentences_complete")
+                Image("img_duo_cheering")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 305, height: 172)

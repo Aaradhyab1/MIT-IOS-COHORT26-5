@@ -16,11 +16,30 @@ import Observation
 /// - after a long silence on the last couple of words (a mumbled or skipped ending).
 /// In the last two cases the recogniser is asked for its final words first, and the
 /// accuracy is worked out from those.
+///
+/// The pauses above come from the microphone level. A noisy room can hide them, so the
+/// ViewModel also watches the words themselves: when no new word arrives for a while near
+/// the end (`IdleEnd`), the passage ends the same way. Early in a passage there is no such
+/// timer, so a natural breath never ends it.
 @Observable
 @MainActor
 final class SentencesPracticeViewModel {
     /// A long silence ends the passage only when this few words (or fewer) are left.
     static let wordsLeftForSilenceToEnd = 2
+
+    /// How long to wait with no new words before ending, by how far the child got.
+    enum IdleEnd {
+        /// Every word tried; the last one was wrong.
+        static let lastWordTried: Duration = .milliseconds(700)
+        /// The last word is half heard ("hun…").
+        static let lastWordHalfHeard: Duration = .milliseconds(1000)
+        /// Only the last word is left (it may have been skipped).
+        static let lastWordMissing: Duration = .seconds(2)
+        /// Two words left.
+        static let twoWordsLeft: Duration = .seconds(3)
+        /// After asking for the final words, score anyway if they don't come.
+        static let finalWordsTimeout: Duration = .seconds(2)
+    }
 
     private(set) var phase: SentencesPracticePhase = .idle
     private(set) var passageIndex = 0
@@ -52,6 +71,8 @@ final class SentencesPracticeViewModel {
     private var task: Task<Void, Never>?
     /// The child is done; waiting for the recogniser's final words before scoring.
     private var isFinishing = false
+    /// Ends the passage when the words stop near the end (see `IdleEnd`).
+    private var endTimer: Task<Void, Never>?
 
     init(
         exerciseId: String,
@@ -152,6 +173,7 @@ final class SentencesPracticeViewModel {
     private func listen() {
         guard let passage = currentPassage else { return }
         isFinishing = false
+        endTimer?.cancel()
         heardSessions.append([])
         let failure = reader.start(
             expecting: passage.text(from: tracker.position),
@@ -173,6 +195,7 @@ final class SentencesPracticeViewModel {
         guard phase == .reading else { return }
         reader.stop()
         isFinishing = false
+        endTimer?.cancel()
         phase = .paused
     }
 
@@ -183,7 +206,32 @@ final class SentencesPracticeViewModel {
         if !heardSessions.isEmpty { heardSessions[heardSessions.count - 1] = heard }
         updateTracker(settled: false)
         // The last word said right: nothing left to wait for.
-        if tracker.isFinished && tracker.isLastWordCorrect { finishPassage() }
+        if tracker.isFinished && tracker.isLastWordCorrect {
+            finishPassage()
+        } else if !isFinishing {
+            scheduleIdleEnd()
+        }
+    }
+
+    /// Restarted with every new word. Near the end, if the words stop, the child is done:
+    /// a wrong or half-heard last word, or a skipped one, must not leave the screen waiting.
+    private func scheduleIdleEnd() {
+        endTimer?.cancel()
+        let wait: Duration
+        if tracker.isFinished {
+            wait = IdleEnd.lastWordTried
+        } else if tracker.remainingCount == 1 {
+            wait = tracker.isHearingCurrentWord ? IdleEnd.lastWordHalfHeard : IdleEnd.lastWordMissing
+        } else if tracker.remainingCount <= Self.wordsLeftForSilenceToEnd {
+            wait = IdleEnd.twoWordsLeft
+        } else {
+            return          // still mid-passage: a pause is just a breath
+        }
+        endTimer = Task { [weak self] in
+            try? await Task.sleep(for: wait)
+            guard !Task.isCancelled, let self, self.phase == .reading, !self.isFinishing else { return }
+            self.endReading()
+        }
     }
 
     private func didGoQuiet(_ quiet: ReadAloudQuiet) {
@@ -203,7 +251,14 @@ final class SentencesPracticeViewModel {
     /// Asks the recogniser for its final words; the score follows in `didStopListening`.
     private func endReading() {
         isFinishing = true
+        endTimer?.cancel()
         reader.finish()
+        // If the recogniser never sends its final words, score what was heard.
+        endTimer = Task { [weak self] in
+            try? await Task.sleep(for: IdleEnd.finalWordsTimeout)
+            guard !Task.isCancelled, let self, self.phase == .reading, self.isFinishing else { return }
+            self.finishPassage()
+        }
     }
 
     /// Listening ended by itself.
@@ -249,6 +304,7 @@ final class SentencesPracticeViewModel {
     }
 
     private func finishPassage() {
+        endTimer?.cancel()
         reader.stop()
         isFinishing = false
         // Nothing recognised: no score, so a silent passage can't look finished.
@@ -318,6 +374,7 @@ final class SentencesPracticeViewModel {
     /// including after "Leave" on the shared overlay.
     func stopAll() {
         task?.cancel()
+        endTimer?.cancel()
         reader.stop()
         voice.stop()
         isFinishing = false
@@ -336,6 +393,7 @@ final class SentencesPracticeViewModel {
         tracker = ReadingTracker(words: words.map(\.spoken))
         heardSessions = []
         isFinishing = false
+        endTimer?.cancel()
         readCount = tracker.position
         correctWords = []
         incorrectWords = []

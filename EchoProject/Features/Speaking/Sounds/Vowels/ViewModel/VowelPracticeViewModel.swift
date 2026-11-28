@@ -8,9 +8,9 @@ import Observation
 /// doesn't count keeps the friend where it is and marks the next stop "Try this one again",
 /// so nothing earned is ever taken away.
 ///
-/// What counts as a good try (v1): the microphone heard a voice for long enough.
-/// The app can measure that reliably; checking the vowel itself is a later step
-/// (see `isGoodTry(_:)`).
+/// What counts as a good try: the microphone heard a voice for long enough, and the
+/// vowel check (`VowelCheckService`) heard the friend's vowel, not another sound.
+/// Saying "eee" to Plane, or any word, keeps Plane where it is.
 @Observable
 @MainActor
 final class VowelPracticeViewModel {
@@ -24,10 +24,10 @@ final class VowelPracticeViewModel {
     static let maxRecordingSeconds = 3
 
     let introSteps: [IntroStep] = [
-        IntroStep(id: 0, icon: "icon_vowel_listen", title: "Listen"),
-        IntroStep(id: 1, icon: "icon_vowel_mic", title: "Say it 3 times"),
-        IntroStep(id: 2, icon: "img_vowel_plane_travel", title: "Help your friend get home"),
-        IntroStep(id: 3, icon: "icon_vowel_stars", title: "Collect a star each time"),
+        IntroStep(id: 0, icon: .image("icon_vowel_listen"), title: "Listen"),
+        IntroStep(id: 1, icon: .image("icon_vowel_mic"), title: "Say it 3 times"),
+        IntroStep(id: 2, icon: .image("img_vowel_plane_travel"), title: "Help your friend get home"),
+        IntroStep(id: 3, icon: .image("icon_vowel_stars"), title: "Collect a star each time"),
     ]
 
     let friends: [SoundFriend]
@@ -39,16 +39,20 @@ final class VowelPracticeViewModel {
 
     private let exerciseId: String
     private let recording: any RecordingService
+    private let vowelCheck: any VowelCheckService
     private let voice: any SpeechSynthesisService
     private let progress: any ProgressRepository
     private let router: AppRouter
     private var totalTries = 0
     private var task: Task<Void, Never>?
+    /// True while a finished try is being checked, so a second tap can't start another.
+    private var isChecking = false
 
     init(
         exerciseId: String,
         friends: [SoundFriend] = SoundFriend.vowelFriends,
         recording: any RecordingService,
+        vowelCheck: any VowelCheckService,
         voice: any SpeechSynthesisService,
         progress: any ProgressRepository,
         router: AppRouter
@@ -56,6 +60,7 @@ final class VowelPracticeViewModel {
         self.exerciseId = exerciseId
         self.friends = friends
         self.recording = recording
+        self.vowelCheck = vowelCheck
         self.voice = voice
         self.progress = progress
         self.router = router
@@ -100,14 +105,14 @@ final class VowelPracticeViewModel {
 
     var subtitle: String {
         switch phase {
-        case .intro: "Play with a sound friend for every sound."
-        case .meet, .playing: "This is \(friend.name).\n\(friend.name) says “\(friend.vowel)”."
+        case .intro: "One sound friend for each sound."
+        case .meet, .playing: "\(friend.name) says “\(friend.vowel)”."
         case .ready: readySubtitle
-        case .listening: "Echo is listening…\nsay “\(friend.vowel)”!"
-        case .tryAgain: "Listen to Echo,\nthen try “\(friend.vowel)” once more."
+        case .listening: "Listening…"
+        case .tryAgain: "Try “\(friend.vowel)” again."
         case .reachedGoal: friend.goalLine
         case .micDenied: "Ask a grown-up to allow the microphone in Settings."
-        case .finished: "You practised \(vowelList).\nGreat listening and talking!"
+        case .finished: "You practised \(vowelList)."
         }
     }
 
@@ -121,8 +126,8 @@ final class VowelPracticeViewModel {
 
     private var readySubtitle: String {
         switch goodTries {
-        case 0: "Say “\(friend.vowel)” \(Self.triesPerFriend) times\nto help \(friend.name) reach \(friend.goalName)."
-        case Self.triesPerFriend - 1: "Say “\(friend.vowel)” one more time!"
+        case 0: "Say “\(friend.vowel)” to reach \(friend.goalName)."
+        case Self.triesPerFriend - 1: "One more “\(friend.vowel)”!"
         default: "Say “\(friend.vowel)” again!"
         }
     }
@@ -167,9 +172,10 @@ final class VowelPracticeViewModel {
 
     /// Mic button: starts a try, or ends it early if one is running.
     func didTapMicrophone() {
+        guard !isChecking else { return }
         if phase == .listening {
             task?.cancel()
-            finishTry()
+            task = Task { await finishTry() }
             return
         }
         task?.cancel()
@@ -186,15 +192,17 @@ final class VowelPracticeViewModel {
             }
             phase = .listening
             try? await Task.sleep(for: .seconds(Self.maxRecordingSeconds))
-            if !Task.isCancelled { finishTry() }
+            if !Task.isCancelled { await finishTry() }
         }
     }
 
-    private func finishTry() {
-        guard phase == .listening else { return }
+    private func finishTry() async {
+        guard phase == .listening, !isChecking else { return }
+        isChecking = true
+        defer { isChecking = false }
         let result = recording.stopRecording()
         totalTries += 1
-        guard isGoodTry(result) else {
+        guard await isGoodTry(result) else {
             phase = .tryAgain
             return
         }
@@ -202,10 +210,12 @@ final class VowelPracticeViewModel {
         phase = goodTries >= Self.triesPerFriend ? .reachedGoal : .ready
     }
 
-    /// v1 rule: a voice, long enough. Replace with a real vowel check when one is ready,
-    /// keeping the same yes/no answer.
-    private func isGoodTry(_ result: RecordingResult) -> Bool {
-        result.peakLevel >= Self.voiceThreshold && result.duration >= Self.minimumVoiceSeconds
+    /// A voice, long enough, and the friend's vowel.
+    private func isGoodTry(_ result: RecordingResult) async -> Bool {
+        guard result.peakLevel >= Self.voiceThreshold, result.duration >= Self.minimumVoiceSeconds else {
+            return false
+        }
+        return await vowelCheck.check(result, expecting: friend.ipa).isMatch
     }
 
     // MARK: - Moving on

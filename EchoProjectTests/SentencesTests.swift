@@ -519,6 +519,59 @@ struct SentencesEdgeCaseTests {
         #expect(vm.result?.totalWords == 3)
     }
 
+    @Test func aWrongLastWordFinishesEvenIfNoPauseIsDetected() async {
+        // A noisy room: the microphone never reports a pause.
+        let reader = ScriptedReadAloudService()
+        let vm = makeViewModel(reader)
+        await startReading(vm)
+
+        reader.hear("I am angry")
+        try? await Task.sleep(for: .milliseconds(900))
+
+        #expect(reader.finishCount == 1)                // final words asked for
+        reader.end(.recognizerEnded)
+        #expect(vm.result?.correctWords == 2)
+        #expect(vm.result?.totalWords == 3)
+    }
+
+    @Test func aSkippedLastWordFinishesAfterAShortWait() async {
+        let reader = ScriptedReadAloudService()
+        let vm = makeViewModel(reader)
+        await startReading(vm)
+
+        reader.hear("I am")
+        try? await Task.sleep(for: .milliseconds(500))
+        #expect(reader.finishCount == 0)                // a breath before the last word
+        try? await Task.sleep(for: .milliseconds(1800))
+        #expect(reader.finishCount == 1)
+        reader.end(.recognizerEnded)
+        #expect(vm.result?.correctWords == 2)
+    }
+
+    @Test func missingFinalWordsStillShowTheResult() async {
+        let reader = ScriptedReadAloudService()
+        let vm = makeViewModel(reader)
+        await startReading(vm)
+
+        reader.hear("I am angry")
+        reader.goQuiet(.pause)                          // asks for final words, which never come
+        try? await Task.sleep(for: .milliseconds(2300))
+
+        #expect(vm.result?.correctWords == 2)
+    }
+
+    @Test func aPauseMidParagraphNeverEndsIt() async {
+        let reader = ScriptedReadAloudService()
+        let vm = makeViewModel(reader, exerciseId: "sentences.paragraphs")
+        await startReading(vm)
+
+        reader.hear("Every morning I")
+        try? await Task.sleep(for: .milliseconds(1200))
+
+        #expect(reader.finishCount == 0)
+        #expect(vm.phase == .reading)
+    }
+
     @Test func aWrongLastWordRevisedByTheFinalResultCountsAsRight() async {
         let reader = ScriptedReadAloudService()
         let vm = makeViewModel(reader)

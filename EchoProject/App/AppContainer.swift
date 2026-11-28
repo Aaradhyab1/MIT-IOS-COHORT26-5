@@ -32,6 +32,8 @@ final class AppContainer {
     let narrator: any StoryNarrationService
     /// Listens live while the child reads a passage aloud (Sentences).
     let reader: any ReadAloudService
+    /// Checks which vowel the child said (Sounds).
+    let vowelCheck: any VowelCheckService
 
     /// The concrete dummy recorder, exposed so a debug menu can switch between
     /// normal, mic-denied and no-voice scenarios. Nil when the real recorder is used.
@@ -48,6 +50,7 @@ final class AppContainer {
         voice: any SpeechSynthesisService,
         narrator: any StoryNarrationService,
         reader: (any ReadAloudService)? = nil,
+        vowelCheck: (any VowelCheckService)? = nil,
         dummyRecording: DummyRecordingService? = nil
     ) {
         self.router = router
@@ -60,6 +63,7 @@ final class AppContainer {
         self.voice = voice
         self.narrator = narrator
         self.reader = reader ?? DummyReadAloudService()
+        self.vowelCheck = vowelCheck ?? DummyVowelCheckService()
         self.dummyRecording = dummyRecording
     }
 
@@ -85,7 +89,8 @@ final class AppContainer {
                 speech: LiveSpeechRecognitionService(),
                 voice: SystemSpeechSynthesisService(),
                 narrator: SpeechStoryNarrationService(),
-                reader: LiveReadAloudService()
+                reader: LiveReadAloudService(),
+                vowelCheck: LiveVowelCheckService()
             )
         }
 

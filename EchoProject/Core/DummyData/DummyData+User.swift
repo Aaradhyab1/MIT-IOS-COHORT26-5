@@ -90,7 +90,6 @@ extension DummyData {
         // Animals in progress, so Home's Today's practice shows "Animals · 4 of 10" as in the prototype.
         ExerciseProgress(exerciseId: "identification.animals", completedCount: 4, targetCount: 10, bestOutcome: .almostThere),
         ExerciseProgress(exerciseId: "words.three-letter", completedCount: 2, targetCount: 10, bestOutcome: .greatJob)
-        ExerciseProgress(exerciseId: "differentiation.odd-sound-out", completedCount: 1, targetCount: 10, bestOutcome: .greatJob)
         // Speaking › Words exercises start at 0/10 (no entry here).
     ]
 }

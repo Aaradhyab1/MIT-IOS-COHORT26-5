@@ -1,6 +1,6 @@
 import Foundation
 
-/// The "How to play" steps, grown-up tip and item word shown on Before you start.
+/// The "How to play" steps and item word shown on Before you start.
 ///
 /// The copy depends only on the game template (ExerciseType), not on the single exercise,
 /// so every exercise of a type shares it. Kept here rather than in `Core/Models`
@@ -18,7 +18,6 @@ struct ExerciseInstructions {
     }
 
     let steps: [Step]
-    let tip: String
     /// What one round is called on the meta pill, e.g. "10 sounds".
     let itemWord: String
 
@@ -27,103 +26,110 @@ struct ExerciseInstructions {
         case .listenAndRespond:
             return ExerciseInstructions(
                 steps: makeSteps([
-                    ("Play the sound", "Tap the big play button and listen closely."),
-                    ("Did you hear it?", "Tap I heard it or I didn't."),
-                    ("Earn a star", "Every honest answer counts. There is no wrong way to play.")
+                    ("Play the sound", "Tap play and listen closely."),
+                    ("Did you hear it?", "Tap I Heard It or I Didn't Hear It. Every honest answer counts.")
                 ]),
-                tip: listeningTip,
                 itemWord: "sounds"
             )
         case .oddOneOut:
             return ExerciseInstructions(
                 steps: makeSteps([
-                    ("Listen to each friend", "Mia, Leo and Zoe each make a sound. Tap a friend to hear them again."),
-                    ("Find the different one", "Tap the friend whose sound was different."),
-                    earnAStar
+                    ("Listen to each friend", "Tap Start. Mia, Leo and Zoe each make a sound."),
+                    ("Find the different one", "Tap the friend whose sound was different.")
                 ]),
-                tip: listeningTip,
                 itemWord: "rounds"
             )
         case .pictureChoice:
             return ExerciseInstructions(
                 steps: makeSteps([
-                    ("Play the sound", "Tap the big play button. You can replay it as often as you like."),
-                    ("Tap the picture", "Four pictures appear. Tap the one that made the sound."),
-                    earnAStar
+                    ("Hear each sound", "Tap each picture to hear its sound, then start the game."),
+                    ("Play the sound", "Tap play. You can replay it as often as you like."),
+                    ("Tap the picture", "Tap the picture that made the sound.")
                 ]),
-                tip: listeningTip,
                 itemWord: "sounds"
             )
         case .storyPlayer:
             return ExerciseInstructions(
                 steps: makeSteps([
-                    ("Listen to the story", "Turn the pages and listen to each part."),
-                    ("Answer the questions", "Tap the picture that matches what happened."),
-                    earnAStar
+                    ("Listen to each page", "Tap play to hear the page, then tap Next."),
+                    ("Put the story in order", "Drag each picture to the number it happened."),
+                    ("Match who did what", "Draw a line from each character to what they did.")
                 ]),
-                tip: listeningTip,
                 itemWord: "rounds"
             )
         case .ordering:
             return ExerciseInstructions(
                 steps: makeSteps([
                     ("Listen to the story", "Listen to what happens, as often as you like."),
-                    ("Put it in order", "Tap the pictures in the order they happened."),
-                    earnAStar
+                    ("Put it in order", "Drag each picture to the number it happened.")
                 ]),
-                tip: listeningTip,
                 itemWord: "rounds"
             )
         case .matching:
             return ExerciseInstructions(
                 steps: makeSteps([
-                    ("Play the sound", "Tap the big play button and listen closely."),
-                    ("Match it", "Tap the picture that goes with the sound."),
-                    earnAStar
+                    ("Listen", "Listen to the story, as often as you like."),
+                    ("Match who did what", "Draw a line from each character to what they did.")
                 ]),
-                tip: listeningTip,
                 itemWord: "rounds"
             )
         case .listenAndRecord:
+            // Words; Sounds uses `forExercise`, which picks `soundSteps`.
             return ExerciseInstructions(
                 steps: makeSteps([
-                    ("Listen first", "Tap play to hear how it sounds."),
-                    ("Say it out loud", "Tap the microphone and say it the same way."),
-                    ("Keep going", "Try again until every round is done. It gets easier each time.")
+                    ("Listen first", "Tap play to hear the word."),
+                    ("Say it out loud", "Tap Record and say the word."),
+                    ("Get help if you need it", "Tap Hear pronunciation, then try again or continue.")
                 ]),
-                tip: speakingTip,
-                itemWord: "tries"
+                itemWord: "words"
             )
         case .readAlong:
             return ExerciseInstructions(
                 steps: makeSteps([
-                    ("Read together", "Read the sentence out loud, one word at a time."),
-                    ("Tap a word", "Tap any word to hear how it is said."),
-                    earnAStar
+                    ("Read it out loud", "Tap the microphone and read, one word at a time."),
+                    ("Watch the words", "Words turn green when said right and red when not."),
+                    ("Tap a word", "Tap any word to hear how it is said.")
                 ]),
-                tip: speakingTip,
                 itemWord: "reads"
             )
         case .conversation:
             return ExerciseInstructions(
                 steps: makeSteps([
-                    ("Listen to Mia", "The shopkeeper asks a question and names the choices, like chocolate, vanilla or strawberry."),
+                    ("Listen to the shopkeeper", "She asks a question and names the choices, like chocolate, vanilla or strawberry."),
                     ("Say your choice", "The microphone turns on by itself. Say one of the choices; it stops when it hears you."),
                     ("Get your ice cream", "Pick a flavour, a cup or cone, and a topping to see your ice cream on the counter.")
                 ]),
-                tip: speakingTip,
                 itemWord: "turns"
             )
         }
     }
 
-    // MARK: - Shared copy
+    /// The steps for one exercise. Same as `forType`, except Sounds, which shares its
+    /// template with Words but plays differently.
+    static func forExercise(_ exercise: Exercise) -> ExerciseInstructions {
+        if exercise.id == "sounds.vowel" {
+            return ExerciseInstructions(steps: soundFriendSteps, itemWord: "sounds")
+        }
+        if exercise.levelId == "speaking.sounds" {
+            return ExerciseInstructions(steps: soundSteps, itemWord: "sounds")
+        }
+        return forType(exercise.type)
+    }
 
-    private static let earnAStar = ("Earn a star", "Right answers glow green. Wrong ones let you try again, no penalty.")
+    /// Consonant, syllable and pattern sounds: listen, then say it.
+    private static let soundSteps = makeSteps([
+        ("Listen first", "Tap play to hear the sound."),
+        ("Say it out loud", "Tap the microphone and say it the same way.")
+    ])
 
-    // The app never asks for the child's name, so tips say "your child".
-    private static let listeningTip = "Sit beside your child and let them tap. If they're unsure, play the sound again before guessing."
-    private static let speakingTip = "Sit face to face so your child can watch your lips, then let them try on their own."
+    /// Vowel sounds: the sound-friend game, the only one with stars.
+    private static let soundFriendSteps = makeSteps([
+        ("Listen", "Hear how your sound friend says its sound."),
+        ("Say it 3 times", "Tap the microphone and say the sound. Each good try moves your friend along."),
+        ("Help your friend get home", "Collect a star each time, until your friend reaches its goal.")
+    ])
+
+    // MARK: - Helpers
 
     /// Numbers the steps 1, 2, 3 in the order given.
     private static func makeSteps(_ pairs: [(String, String)]) -> [Step] {

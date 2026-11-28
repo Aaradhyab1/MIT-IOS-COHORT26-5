@@ -7,7 +7,6 @@ final class StoryPlayerViewModel {
 
     enum State: Equatable {
         case loading
-        case intro
         case listening(pageIndex: Int)
         case storyFinished
         case ordering
@@ -104,11 +103,6 @@ final class StoryPlayerViewModel {
     }
 
     // MARK: - User actions
-
-    func didTapBegin() {
-        guard state == .intro else { return }
-        state = pages.isEmpty ? .storyFinished : .listening(pageIndex: 0)
-    }
 
     /// The round button on the audio bar: play, pause, resume or listen again.
     func didTapPlay() {
@@ -251,7 +245,8 @@ final class StoryPlayerViewModel {
             }
         }
 
-        state = .intro
+        // Before you start already explains the story, so it opens on the first page.
+        state = pages.isEmpty ? .storyFinished : .listening(pageIndex: 0)
     }
 
     private func questionDone(correct: Bool, next: State?) {

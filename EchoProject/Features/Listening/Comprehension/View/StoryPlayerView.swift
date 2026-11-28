@@ -50,8 +50,6 @@ struct StoryPlayerView: View {
             Text(message)
                 .echoFont(.supporting)
                 .foregroundStyle(EchoColor.textSecondary)
-        case .intro:
-            StoryIntroView(onBegin: vm.didTapBegin)
         case .listening:
             StoryPageView(vm: vm)
         case .storyFinished:
@@ -209,113 +207,6 @@ private struct StoryFinishedView: View {
         .padding(.top, 130)
         .safeAreaInset(edge: .bottom) {
             ComprehensionBottomButton(title: "Let's go", action: onContinue)
-        }
-    }
-}
-
-private struct StoryIntroView: View {
-    let onBegin: () -> Void
-
-    var body: some View {
-        ZStack(alignment: .top) {
-            Color.clear
-                .aspectRatio(402.0 / 607.0, contentMode: .fit)
-                .overlay {
-                    Image("img_story-time")
-                        .resizable()
-                        .scaledToFill()
-                }
-                .clipped()
-                .mask {
-                    LinearGradient(
-                        stops: [.init(color: .black, location: 0.75), .init(color: .clear, location: 1)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
-                .ignoresSafeArea(edges: .top)
-                .accessibilityHidden(true)
-
-            VStack(spacing: 0) {
-                Text("Story time!")
-                    .echoFont(.title, .bold)
-                    .foregroundStyle(EchoColor.textPrimary)
-                    .accessibilityAddTraits(.isHeader)
-                    .padding(.top, 18)
-
-                Spacer(minLength: EchoSpacing.l)
-
-                VStack(alignment: .leading, spacing: 10) {
-                    StoryIntroRow(
-                        icon: .listen,
-                        title: "Listen carefully",
-                        detail: "Play the audio and listen to the story carefully"
-                    )
-                    StoryIntroRow(
-                        icon: .answer,
-                        title: "Choose the right answers",
-                        detail: "Answer a few questions after the story."
-                    )
-                }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(ComprehensionColor.frostedCard, in: .rect(cornerRadius: 28))
-                .echoShadow(ComprehensionColor.frostedCardShadow)
-                .padding(.horizontal, EchoSpacing.l)
-                .padding(.bottom, 64)
-            }
-        }
-        .safeAreaInset(edge: .bottom) {
-            ComprehensionBottomButton(title: "Let's begin", action: onBegin)
-        }
-    }
-}
-
-private struct StoryIntroRow: View {
-    enum Icon {
-        case listen
-        case answer
-    }
-
-    let icon: Icon
-    let title: String
-    let detail: String
-
-    var body: some View {
-        HStack(spacing: 14) {
-            iconView
-                .frame(width: 56, height: 56)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: EchoSpacing.xxs) {
-                Text(title)
-                    .echoFont(.body, .semibold)
-                    .foregroundStyle(EchoColor.textPrimary)
-                Text(detail)
-                    .echoFont(.body)
-                    .foregroundStyle(EchoColor.textSecondary)
-            }
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    @ViewBuilder
-    private var iconView: some View {
-        switch icon {
-        case .listen:
-            Image(systemName: "speaker.wave.2.fill")
-                .font(.system(size: 24))
-                .foregroundStyle(EchoColor.accentFill)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(ComprehensionColor.listenIconFill, in: Circle())
-        case .answer:
-            Image(systemName: "checkmark")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 28, height: 28)
-                .background(ComprehensionColor.answerIcon, in: Circle())
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(ComprehensionColor.answerIconFill, in: Circle())
         }
     }
 }

@@ -2,8 +2,9 @@ import SwiftUI
 
 /// Style for the main call to action on a screen, such as "Start" or "Continue".
 ///
-/// Full-width blue capsule with a soft glow. Dims when disabled and shrinks slightly
-/// while pressed. Add horizontal padding at the call site to narrow it.
+/// Blue capsule with a soft glow, `EchoSize.buttonWidth` wide (narrower if its container
+/// is) and 56 pt tall, the same on every screen. Dims when disabled and shrinks slightly
+/// while pressed.
 ///
 ///     Button("Start", action: viewModel.start)
 ///         .buttonStyle(.echoPrimary)
@@ -14,7 +15,7 @@ struct EchoPrimaryButtonStyle: ButtonStyle {
         configuration.label
             .echoFont(.body, .semibold)
             .foregroundStyle(EchoColor.textOnAccent)
-            .frame(maxWidth: .infinity, minHeight: 56)
+            .frame(maxWidth: EchoSize.buttonWidth, minHeight: 56)
             .background(EchoColor.accentFill, in: Capsule())
             .echoShadow(isEnabled ? .primaryButton : .none)
             .opacity(isEnabled ? 1 : 0.4)

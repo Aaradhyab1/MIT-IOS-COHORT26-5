@@ -6,6 +6,6 @@ import Foundation
 /// screen only edits files inside their own folder.
 extension AppContainer {
     func makeBeforeYouStartViewModel(exerciseId: String) -> BeforeYouStartViewModel {
-        BeforeYouStartViewModel(exerciseId: exerciseId, content: content, audio: audio, router: router)
+        BeforeYouStartViewModel(exerciseId: exerciseId, content: content, router: router)
     }
 }

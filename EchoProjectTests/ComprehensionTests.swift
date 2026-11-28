@@ -22,7 +22,6 @@ struct ComprehensionTests {
     private func makeStoryPage() -> (StoryPlayerViewModel, MockStoryNarrationService) {
         let narrator = MockStoryNarrationService(simulatesPlayback: false)
         let vm = makeStory(router: AppRouter(isOnboardingComplete: true), narrator: narrator)
-        vm.didTapBegin()
         return (vm, narrator)
     }
 
@@ -45,15 +44,13 @@ struct ComprehensionTests {
 
     // MARK: - Story
 
-    @Test func storyStartsOnStoryTimeWithBothQuestions() {
+    @Test func storyOpensOnTheFirstPageWithBothQuestions() {
         let vm = makeStory(router: AppRouter(isOnboardingComplete: true))
 
-        #expect(vm.state == .intro)
+        // No separate "Story time" screen: Before you start already explains the story.
+        #expect(vm.state == .listening(pageIndex: 0))
         #expect(vm.ordering != nil)
         #expect(vm.matching != nil)
-
-        vm.didTapBegin()
-        #expect(vm.state == .listening(pageIndex: 0))
         #expect(vm.canGoNext == false)
     }
 

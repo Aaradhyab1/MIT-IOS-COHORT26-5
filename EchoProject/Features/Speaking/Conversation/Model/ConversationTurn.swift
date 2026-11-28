@@ -13,7 +13,7 @@ struct ConversationChoice: Identifiable, Hashable {
 /// and the child says one of them.
 ///
 /// Built from an `ExerciseItem`: `text` is the question, `options` are the choices
-/// and `image` is the picture slot for the shopkeeper.
+/// and `image` is the full-screen shop background for this turn.
 struct ConversationTurn: Identifiable, Hashable {
     let id: String
     let question: String

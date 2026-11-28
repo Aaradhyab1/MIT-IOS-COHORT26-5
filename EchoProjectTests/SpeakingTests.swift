@@ -42,13 +42,13 @@ struct SpeakingTests {
     @Test func wordItemReadsPartsHintAndAnswers() {
         let item = WordPracticeItem(ExerciseItem(
             id: "word-sun", text: "Sun",
-            options: [Option(id: "0", label: "S", pronunciation: "s"),
-                      Option(id: "1", label: "UN", pronunciation: "ʌn")],
+            options: [Option(id: "0", label: "S", pronunciation: "suh"),
+                      Option(id: "1", label: "UN", pronunciation: "un")],
             hint: "s · un → sun", acceptedAnswers: ["sun", "son"]
         ))
         #expect(item.word == "Sun")
         #expect(item.soundChips == ["S", "UN"])
-        #expect(item.parts == [WordPart(chip: "S", ipa: "s"), WordPart(chip: "UN", ipa: "ʌn")])
+        #expect(item.parts == [WordPart(chip: "S", sound: "suh"), WordPart(chip: "UN", sound: "un")])
         #expect(item.acceptedAnswers == ["sun", "son"])
     }
 
@@ -57,8 +57,8 @@ struct SpeakingTests {
         for id in ["words.one-syllable", "words.two-syllable", "words.three-syllable", "words.four-plus-syllable"] {
             for item in content.exercise(id: id)?.items ?? [] {
                 let word = WordPracticeItem(item)
-                #expect(word.parts.count >= 2, "\(word.word) needs at least two parts")
-                #expect(word.parts.allSatisfy { $0.ipa != nil }, "\(word.word) has a part without a sound")
+                #expect(!word.parts.isEmpty, "\(word.word) needs at least one part")
+                #expect(word.parts.allSatisfy { $0.sound != nil }, "\(word.word) has a part without a sound")
                 // The parts spell the word: "S" + "UN" = "SUN".
                 #expect(word.soundChips.joined() == word.word.uppercased(), "\(word.word) parts don't spell it")
             }
@@ -67,7 +67,7 @@ struct SpeakingTests {
 
     @Test func longerWordsAreSplitIntoOnePartPerSyllable() {
         let content = InMemoryContentRepository()
-        let syllables = ["words.two-syllable": 2, "words.three-syllable": 3]
+        let syllables = ["words.one-syllable": 1, "words.two-syllable": 2, "words.three-syllable": 3]
         for (id, count) in syllables {
             for item in content.exercise(id: id)?.items ?? [] {
                 #expect(WordPracticeItem(item).parts.count == count, "\(item.text ?? "") should have \(count) parts")

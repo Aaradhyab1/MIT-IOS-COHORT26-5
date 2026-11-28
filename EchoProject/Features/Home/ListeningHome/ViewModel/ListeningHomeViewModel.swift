@@ -77,10 +77,11 @@ final class ListeningHomeViewModel {
         }
         categories = levelGroups
 
-        // Replay games from the levels before this one.
+        // Replay games from the levels before this one: one card per finished game,
+        // so the child can jump straight back into it.
         let earlier = levels.filter { $0.order < current.order }
-        reviewCards = earlier.flatMap { groups(in: $0) }
-        reviewSubtitle = Self.replayLine(for: earlier.map(\.order))
+        reviewCards = earlier.flatMap { reviewGroups(in: $0) }
+        reviewSubtitle = Self.replayLine(for: Array(Set(reviewCards.map(\.levelNumber))).sorted())
 
         // The next level stays locked until this level's games are done.
         if let next = levels.first(where: { $0.order == current.order + 1 }) {
@@ -153,6 +154,36 @@ final class ListeningHomeViewModel {
         }
         return result
     }
+
+    /// One card per playable game in a level (not folded into collections),
+    /// so "Listen for the Animal" and "Hear the Doorbell" get their own cards.
+    private func reviewGroups(in level: Level) -> [PracticeGroup] {
+        content.exercises(inLevel: level.id)
+            .filter { Self.replayableExerciseIds.contains($0.id) }
+            .map { exercise in
+                let p = progress.progress(for: exercise.id)
+                return PracticeGroup(
+                    id: exercise.id,
+                    levelId: level.id,
+                    levelNumber: level.order,
+                    title: exercise.title,
+                    collection: nil,            // opens the game itself, not the collection list
+                    firstExerciseId: exercise.id,
+                    imageName: exercise.illustration,
+                    durationMinutes: exercise.durationMinutes,
+                    completed: p.completedCount,
+                    target: p.targetCount
+                )
+            }
+    }
+
+    /// Games from earlier levels that are built and ready to replay.
+    /// TODO: add more ids here as their screens are finished.
+    private static let replayableExerciseIds: Set<String> = [
+        "detection.hide-and-seek.animal",       // Level 1 · Listen for the Animal
+        "detection.hide-and-seek.doorbell",     // Level 1 · Hear the Doorbell
+        "differentiation.odd-sound-out"         // Level 2 · Odd Sound Out
+    ]
 
     /// [1, 2] → "Replay games from Levels 1 and 2."
     private static func replayLine(for numbers: [Int]) -> String {

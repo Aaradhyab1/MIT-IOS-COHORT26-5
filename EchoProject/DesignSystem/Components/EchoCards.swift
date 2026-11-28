@@ -11,12 +11,15 @@ struct EchoExerciseCard: View {
     let meta: String
     /// Asset catalog name of the thumbnail.
     let imageName: String
+    /// Lets a screen soften the artwork slightly (1 = fully opaque).
+    var artworkOpacity: Double = 1
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: EchoSpacing.s) {
                 EchoArtwork(imageName: imageName, cornerRadius: EchoRadius.thumbnailSmall)
+                    .opacity(artworkOpacity)
                     .frame(height: 104)
                 Text(title)
                     .echoFont(.supporting, .semibold)
@@ -98,6 +101,8 @@ struct EchoCategoryTile: View {
     var progress: Double = 0
     /// Highlights the title in blue for the category the child is working on.
     var isCurrent = false
+    /// Lets a screen soften the artwork slightly (1 = fully opaque).
+    var artworkOpacity: Double = 1
     let action: () -> Void
 
     private static let ringDiameter: CGFloat = 84
@@ -117,6 +122,7 @@ struct EchoCategoryTile: View {
                             .rotationEffect(.degrees(-90)) // Start the arc at 12 o'clock.
                     }
                     EchoArtwork(imageName: imageName, cornerRadius: Self.artDiameter / 2)
+                        .opacity(artworkOpacity)
                         .frame(width: Self.artDiameter, height: Self.artDiameter)
                         .overlay(Circle().stroke(.white, lineWidth: 2))
                 }

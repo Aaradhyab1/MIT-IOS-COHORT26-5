@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "img_icecream_vanilla_cup_sprinkles.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

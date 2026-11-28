@@ -107,9 +107,9 @@ struct ExerciseInstructions {
         case .conversation:
             return ExerciseInstructions(
                 steps: makeSteps([
-                    ("Listen to the shopkeeper", "Hear what they ask. Tap to hear it again."),
-                    ("Take your turn", "Tap the microphone and say one of the choices."),
-                    ("Get your ice cream", "Finish the order to complete the visit.")
+                    ("Listen to Mia", "The shopkeeper asks a question and names the choices, like chocolate, vanilla or strawberry."),
+                    ("Say your choice", "The microphone turns on by itself. Say one of the choices; it stops when it hears you."),
+                    ("Get your ice cream", "Pick a flavour, a cup or cone, and a topping to see your ice cream on the counter.")
                 ]),
                 tip: speakingTip,
                 itemWord: "turns"

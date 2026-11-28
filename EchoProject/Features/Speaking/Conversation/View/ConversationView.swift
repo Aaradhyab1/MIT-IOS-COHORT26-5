@@ -18,10 +18,50 @@ struct ConversationView: View {
     var body: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .echoExerciseBackground(.iceCreamShop)
+            .background { backdrop }
             .navigationTitle(vm.title)
             .exerciseChrome(onBack: vm.didTapBack)
             .onDisappear { vm.stopAll() }
+    }
+
+    /// Full-screen ice cream stall, the same on every screen. Mia is drawn into the intro
+    /// and each turn's picture (the counter changes with the question); the ice cream
+    /// screen uses the empty stall.
+    ///
+    /// Pinned to the full screen with GeometryReader, so it never shifts when the content
+    /// changes. On the ice cream screen the finished ice cream stands on the counter.
+    private var backdrop: some View {
+        GeometryReader { geometry in
+            let size = geometry.size
+            ZStack(alignment: .topLeading) {
+                Image(backdropName)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size.width, height: size.height)
+                    .clipped()
+                if vm.phase == .finished {
+                    // Bottom of the ice cream on the counter top (about 54% down the art).
+                    let height = size.height * 0.17
+                    Image(vm.iceCreamImageName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: height)
+                        .position(x: size.width / 2, y: size.height * 0.54 - height / 2)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+        }
+        .ignoresSafeArea()
+        .transaction { $0.animation = nil }     // swap pictures instantly, no sliding
+        .accessibilityHidden(true)
+    }
+
+    private var backdropName: String {
+        switch vm.phase {
+        case .intro: "img_bg_conversation_intro"
+        case .finished, .micDenied, .unavailable: "img_bg_conversation_plain"
+        default: vm.backgroundImageName ?? "img_bg_conversation_flavour"
+        }
     }
 
     @ViewBuilder
@@ -57,24 +97,18 @@ struct ConversationView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading, EchoSpacing.m)
 
+            // Mia and the counter are part of the background; the mic sits below the counter.
+            Spacer(minLength: 0)
+            roundControl
+
             if let childLine = vm.childLine {
                 childBubble(childLine)
             }
 
-            ZStack(alignment: .bottom) {
-                // Picture slot: the shopkeeper behind the counter (Figma: 402 × 396).
-                ConversationImageSlot(imageName: vm.shopkeeperImageName)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                roundControl
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            ChoiceChipsRow(choices: vm.choices)
             bottom
         }
         .padding(.horizontal, EchoSpacing.screenHorizontal)
         .padding(.bottom, EchoSpacing.xl)
-        .animation(.easeInOut, value: vm.shopkeeperLine)
     }
 
     /// The child's last answer, on the right like a chat message.
@@ -95,7 +129,7 @@ struct ConversationView: View {
         .accessibilityLabel("You said \(text)")
     }
 
-    /// The only recording control: blue microphone to start, red stop button to finish.
+    /// Recording starts by itself after each question; the red button stops it early.
     @ViewBuilder
     private var roundControl: some View {
         switch vm.phase {
@@ -105,12 +139,8 @@ struct ConversationView: View {
                 .frame(height: 80)
         case .recording:
             SpeakingControlButton(control: .stop, action: vm.didTapStop)
-        case .shopkeeperTalking:
-            SpeakingControlButton(control: .microphone, action: vm.didTapSpeak)
-                .opacity(0.5)
-                .disabled(true)
         default:
-            SpeakingControlButton(control: .microphone, action: vm.didTapSpeak)
+            Color.clear.frame(height: 80)
         }
     }
 
@@ -127,7 +157,7 @@ struct ConversationView: View {
 
             switch vm.phase {
             case .recording:
-                Text("Tap the red button when you're done.")
+                Text("I'm listening… say your answer.")
                     .echoFont(.body)
                     .foregroundStyle(EchoColor.speakingBody)
             case .checking:
@@ -139,7 +169,8 @@ struct ConversationView: View {
                     .echoFont(.body)
                     .foregroundStyle(EchoColor.speakingBody)
             default:
-                tapToSpeakCapsule
+                // Recording starts by itself; the button only appears after two silent tries.
+                if vm.needsTapToSpeak { tapToSpeakCapsule }
             }
         }
         .frame(minHeight: 58)
@@ -170,10 +201,8 @@ struct ConversationView: View {
     /// "Here you go! Your ice cream is ready." with the ice cream the child ordered.
     private var iceCreamReady: some View {
         VStack(spacing: EchoSpacing.l) {
-            // Picture slot: the ice cream made from the choices, e.g.
-            // "img_icecream_chocolate_cone_sprinkles".
-            ConversationImageSlot(imageName: vm.iceCreamImageName)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // The ice cream itself stands on the counter in `backdrop`.
+            Spacer(minLength: 0)
 
             VStack(spacing: EchoSpacing.s) {
                 Text("Here you go!")

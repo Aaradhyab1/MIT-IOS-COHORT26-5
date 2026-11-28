@@ -32,6 +32,8 @@ final class ConversationViewModel {
     private(set) var heardText = ""
     /// One choice per finished turn, in order: [Chocolate, Cone, Sprinkles].
     private(set) var order: [ConversationChoice] = []
+    /// True only after the child stayed silent twice: the screen then shows "Tap to speak".
+    private(set) var needsTapToSpeak = false
 
     private let exerciseId: String
     private let turns: [ConversationTurn]
@@ -43,6 +45,10 @@ final class ConversationViewModel {
 
     /// True after an answer that was not one of the choices on this turn.
     private var hadRetry = false
+    /// Silent recordings in a row on this turn. After `maxSilentTries` the app stops
+    /// listening by itself and shows "Tap to speak", so it never loops forever.
+    private var silentTries = 0
+    static let maxSilentTries = 2
     /// Turns answered with a valid choice on the first try; used for the score.
     private var firstTryCount = 0
     private var task: Task<Void, Never>?
@@ -84,8 +90,11 @@ final class ConversationViewModel {
 
     var prompt: String { currentTurn?.prompt ?? "" }
 
-    /// Picture slot for the shopkeeper.
-    var shopkeeperImageName: String? { currentTurn?.imageName ?? turns.first?.imageName }
+    /// Full-screen shop for this turn; the counter shows what Mia is asking about.
+    /// Stays on the last turn's picture while she says "Here you go!".
+    var backgroundImageName: String? {
+        (currentTurn ?? turns.last)?.imageName
+    }
 
     /// Picture slot for the finished ice cream, named after the choices:
     /// "img_icecream_chocolate_cone_sprinkles".
@@ -122,12 +131,14 @@ final class ConversationViewModel {
     private func askCurrentQuestion(after lead: String?) {
         guard let currentTurn else { return }
         hadRetry = false
+        silentTries = 0
         notice = nil
         heardText = ""
         say([lead, currentTurn.question].compactMap { $0 }.joined(separator: " "), then: .yourTurn)
     }
 
     /// Shows `line` in the bubble, says it out loud, then moves to `next`.
+    /// When it is the child's turn, recording starts by itself: no mic tap needed.
     private func say(_ line: String, then next: ConversationPhase) {
         task?.cancel()
         voice.stop()
@@ -136,7 +147,12 @@ final class ConversationViewModel {
         task = Task {
             await voice.speak(line, slowly: false)
             guard !Task.isCancelled, phase == .shopkeeperTalking else { return }
-            if next == .finished { finish() } else { phase = next }
+            if next == .finished {
+                finish()
+            } else {
+                phase = next
+                if next == .yourTurn { startRecording() }
+            }
         }
     }
 
@@ -149,9 +165,16 @@ final class ConversationViewModel {
 
     // MARK: - Recording
 
-    /// "Tap to speak" or the microphone button.
+    /// "Tap to speak": only shown after the child stayed silent twice.
     func didTapSpeak() {
+        silentTries = 0
+        startRecording()
+    }
+
+    /// Starts recording right after the shopkeeper finishes talking.
+    private func startRecording() {
         guard phase == .yourTurn else { return }
+        needsTapToSpeak = false
         task?.cancel()
         voice.stop()
         notice = nil
@@ -206,8 +229,15 @@ final class ConversationViewModel {
         let result = recording.stopRecording()
 
         guard result.peakLevel >= Self.voiceThreshold else {
-            notice = "I didn't hear that. Tap to speak and try again."
-            phase = .yourTurn
+            silentTries += 1
+            if silentTries < Self.maxSilentTries {
+                // Ask again and listen again by itself.
+                say("I didn't hear you. " + (currentTurn?.question ?? ""), then: .yourTurn)
+            } else {
+                notice = "I didn't hear that. Tap to speak when you're ready."
+                needsTapToSpeak = true
+                phase = .yourTurn
+            }
             return
         }
 

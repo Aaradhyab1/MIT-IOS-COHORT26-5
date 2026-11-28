@@ -235,25 +235,28 @@ extension DummyData {
         Exercise(
             id: "conversation.ice-cream-shop", levelId: "speaking.conversation", type: .conversation,
             title: "Ice Cream Shop", summary: "Order your favourite ice cream",     // TODO(copy)
-            illustration: "ex_ice-cream-shop",
+            illustration: "img_mia_serving_ice_cream",   // Mia the shopkeeper, new art style
             repetitions: 1,
             items: [
                 conversationTurn(
                     "turn-flavour",
                     question: "Hi there! What ice cream would you like today? We have chocolate, vanilla or strawberry.",
                     choices: ["Chocolate", "Vanilla", "Strawberry"],
+                    background: "img_bg_conversation_flavour",
                     confirmation: "{choice}, yummy!"
                 ),
                 conversationTurn(
                     "turn-cup-or-cone",
                     question: "Yummy! Would you like it in a cup or a cone?",
                     choices: ["Cup", "Cone"],
+                    background: "img_bg_conversation_cup_cone",
                     confirmation: "A {choice}, coming right up!"
                 ),
                 conversationTurn(
                     "turn-topping",
                     question: "Would you like sprinkles or a cherry on top?",
                     choices: ["Sprinkles", "Cherry"],
+                    background: "img_bg_conversation_topping",
                     confirmation: "{choice} on top, lovely!"
                 )
             ]
@@ -275,14 +278,15 @@ extension DummyData {
 
     /// A conversation turn: the shopkeeper's question, the choices the child can say, and
     /// how the shopkeeper confirms an answer ("{choice}" is replaced by it).
-    /// Picture slots: "img_conversation_shopkeeper" for the shopkeeper and
-    /// "img_choice_<choice>" (e.g. "img_choice_chocolate") for each choice.
+    /// `background` is the full-screen shop for this turn: Mia with the counter showing
+    /// what she is asking about (flavours, cup and cone, toppings).
+    /// "img_choice_<choice>" (e.g. "img_choice_chocolate") is the picture for each choice.
     private static func conversationTurn(_ id: String, question: String, choices: [String],
-                                         confirmation: String) -> ExerciseItem {
+                                         background: String, confirmation: String) -> ExerciseItem {
         ExerciseItem(
             id: id,
             prompt: "Tell the shopkeeper what you would like.",
-            image: "img_conversation_shopkeeper",
+            image: background,
             text: question,
             speaker: .mia,
             options: choices.map { choice in

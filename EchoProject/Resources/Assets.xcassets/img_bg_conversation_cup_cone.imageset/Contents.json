@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "img_bg_conversation_cup_cone.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

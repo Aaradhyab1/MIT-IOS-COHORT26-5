@@ -21,6 +21,45 @@ struct VowelFormantsTests {
     }
 }
 
+struct VowelTranscriptTests {
+    @Test func anyLengthOfTheSameVowelReadsTheSame() {
+        for text in ["a", "aa", "aaa", "Aaaaa!", "Ah", "Ahhh", "AAH", "aa aa"] {
+            #expect(VowelTranscript.family(of: text) == "ɑ", "\(text)")
+        }
+        for text in ["oo", "Ooo", "Oooh", "ooo ooo", "Who"] {
+            #expect(VowelTranscript.family(of: text) == "u", "\(text)")
+        }
+        for text in ["ee", "Eee", "EEEE", "ee ee"] {
+            #expect(VowelTranscript.family(of: text) == "i", "\(text)")
+        }
+    }
+
+    @Test func realWordsAndMixedVowelsAreNotAVowel() {
+        #expect(VowelTranscript.family(of: "hello") == nil)
+        #expect(VowelTranscript.family(of: "aa ee") == nil)
+        #expect(VowelTranscript.family(of: "") == nil)
+    }
+
+    private let unsure = VowelCheck(isMatch: false, heard: nil, matchingSeconds: 0)
+
+    @Test func theRecognisersAaaCountsForPlane() {
+        let result = VowelTranscript.decide(formants: unsure, transcripts: ["Aaa"], target: "ɑ")
+        #expect(result.isMatch)
+    }
+
+    @Test func aDifferentVowelIsStillRejected() {
+        let formantsSaidYes = VowelCheck(isMatch: true, heard: "ɑ", matchingSeconds: 1)
+        let result = VowelTranscript.decide(formants: formantsSaidYes, transcripts: ["Eee"], target: "ɑ")
+        #expect(!result.isMatch)
+    }
+
+    @Test func noTranscriptLeavesItToTheFormants() {
+        let formantsSaidYes = VowelCheck(isMatch: true, heard: "u", matchingSeconds: 1)
+        #expect(VowelTranscript.decide(formants: formantsSaidYes, transcripts: [], target: "u").isMatch)
+        #expect(!VowelTranscript.decide(formants: unsure, transcripts: ["hello"], target: "u").isMatch)
+    }
+}
+
 @MainActor
 struct VowelPracticeViewModelTests {
     private func makeViewModel(vowelMatches: Bool) -> (VowelPracticeViewModel, DummyRecordingService) {

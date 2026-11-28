@@ -1,6 +1,8 @@
 import Foundation
 import AVFoundation
 import Accelerate
+import Speech
+import os
 
 /// Checks the vowel in a recording by measuring its formants on the iPhone.
 ///
@@ -14,6 +16,13 @@ import Accelerate
 ///    children's voices (Hillenbrand et al., 1995),
 /// 5. counts a try when the expected vowel family wins and lasts long enough.
 ///
+/// Apple's speech recogniser is asked too, as a second opinion. It writes a held vowel in
+/// many ways ("a", "aa", "aaa", "Ah", "Ahh", "Uh"), so its text is never compared exactly:
+/// `VowelTranscript` collapses repeated letters and maps the result to a vowel family.
+/// - The recogniser heard the expected vowel: the try counts.
+/// - It heard a different vowel ("ee" for Plane): the try doesn't count.
+/// - It heard nothing useful (common for a lone vowel): the formant check decides.
+///
 /// Everything runs on the device; no audio leaves the phone.
 @MainActor
 final class LiveVowelCheckService: VowelCheckService {
@@ -23,12 +32,113 @@ final class LiveVowelCheckService: VowelCheckService {
         }
         let url = RecordingFiles.url(for: fileName)
         let target = VowelFormants.family(of: ipa)
-        let result = await Task.detached(priority: .userInitiated) {
+        await Self.askForSpeechPermissionIfNeeded()
+
+        async let formants = Task.detached(priority: .userInitiated) {
             VowelAnalyzer.analyze(url: url, target: target)
         }.value
-        print("[Echo vowel] expected \(target ?? "?"), heard \(result.heard ?? "nothing clear"), "
-              + "\(String(format: "%.2f", result.matchingSeconds)) s matching → \(result.isMatch ? "counts" : "try again")")
+        async let transcripts = VowelTranscriber.transcribe(url: url)
+        let (formantResult, texts) = await (formants, transcripts)
+
+        let result = VowelTranscript.decide(formants: formantResult, transcripts: texts, target: target)
+        print("[Echo vowel] expected \(target ?? "?"), recogniser \(texts), formants heard "
+              + "\(formantResult.heard ?? "nothing clear") (\(String(format: "%.2f", formantResult.matchingSeconds)) s) "
+              + "→ \(result.isMatch ? "counts" : "try again")")
         return result
+    }
+
+    /// The Sounds screen only asks for the microphone; ask for speech recognition once here.
+    private static func askForSpeechPermissionIfNeeded() async {
+        guard SFSpeechRecognizer.authorizationStatus() == .notDetermined else { return }
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            SFSpeechRecognizer.requestAuthorization { @Sendable _ in continuation.resume() }
+        }
+    }
+}
+
+/// Turns the recogniser's text for a held vowel into a vowel family, without exact matching.
+nonisolated enum VowelTranscript {
+    /// Spellings the recogniser uses for each held vowel, after `normalize`.
+    static let spellings: [String: Set<String>] = [
+        "ɑ": ["a", "ah", "ha", "aha", "ar", "uh", "huh", "aw"],
+        "u": ["o", "oh", "u", "wo", "who", "ou", "you", "yo", "ew"],
+        "i": ["e", "ea", "he", "ye", "we", "me", "y"],
+    ]
+
+    /// "Aaaa!" → "a", "Ahhh" → "ah", "OOOH" → "oh", "ee ee ee" → "e".
+    /// Lowercases, keeps letters only, and squeezes each run of the same letter to one,
+    /// so however long the child holds the sound, it reads the same.
+    static func normalize(_ text: String) -> [String] {
+        text.lowercased()
+            .split(whereSeparator: { !$0.isLetter })
+            .map { word in
+                var squeezed = ""
+                for character in word where character != squeezed.last { squeezed.append(character) }
+                return squeezed
+            }
+            .filter { !$0.isEmpty }
+    }
+
+    /// The vowel family the text stands for, or nil if it isn't a held vowel
+    /// (a real word, or a mix of different vowels).
+    static func family(of text: String) -> String? {
+        let words = normalize(text)
+        guard !words.isEmpty else { return nil }
+        let families = Set(words.map { word in spellings.first { $0.value.contains(word) }?.key })
+        guard families.count == 1, let only = families.first else { return nil }
+        return only
+    }
+
+    /// Combines the recogniser's guesses (best first) with the formant check.
+    static func decide(formants: VowelCheck, transcripts: [String], target: String?) -> VowelCheck {
+        guard let target else { return formants }
+        let heardFamilies = transcripts.compactMap(family(of:))
+        if let first = heardFamilies.first {
+            if first == target || (heardFamilies.contains(target) && formants.heard == target) {
+                return VowelCheck(isMatch: true, heard: target, matchingSeconds: formants.matchingSeconds)
+            }
+            return VowelCheck(isMatch: false, heard: first, matchingSeconds: formants.matchingSeconds)
+        }
+        return formants
+    }
+}
+
+/// Runs Apple's speech recogniser on a finished recording, on the device when it can.
+nonisolated enum VowelTranscriber {
+    /// Give up after this long; the formant check is enough on its own.
+    static let timeout: TimeInterval = 2
+
+    /// Up to five guesses, best first. Empty if recognition isn't allowed or heard nothing.
+    static func transcribe(url: URL) async -> [String] {
+        guard SFSpeechRecognizer.authorizationStatus() == .authorized,
+              let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US")),
+              recognizer.isAvailable else { return [] }
+        let request = SFSpeechURLRecognitionRequest(url: url)
+        request.shouldReportPartialResults = false
+        request.requiresOnDeviceRecognition = recognizer.supportsOnDeviceRecognition
+        request.contextualStrings = ["aaa", "ah", "ooo", "oo", "eee", "ee"]
+
+        return await withCheckedContinuation { (continuation: CheckedContinuation<[String], Never>) in
+            let resumed = OSAllocatedUnfairLock(initialState: false)
+            let finish: @Sendable ([String]) -> Void = { texts in
+                let first = resumed.withLock { done -> Bool in
+                    defer { done = true }
+                    return !done
+                }
+                if first { continuation.resume(returning: texts) }
+            }
+            let task = recognizer.recognitionTask(with: request) { result, error in
+                if let result, result.isFinal {
+                    finish(result.transcriptions.prefix(5).map(\.formattedString))
+                } else if error != nil {
+                    finish([])
+                }
+            }
+            DispatchQueue.global().asyncAfter(deadline: .now() + timeout) {
+                task.cancel()
+                finish([])
+            }
+        }
     }
 }
 

@@ -34,6 +34,11 @@ final class WordsPracticeViewModel {
     private var lastRecording: RecordingResult?
     private var correctItemIds: Set<String> = []
     private var task: Task<Void, Never>?
+    /// Live captions while recording; used to stop by itself once the child has spoken.
+    private var lastLiveText = ""
+    private var silenceTask: Task<Void, Never>?
+    /// Recording stops this long after the child's last word.
+    static let stopAfterSpeech: Duration = .seconds(1)
 
     init(
         exerciseId: String,
@@ -46,7 +51,9 @@ final class WordsPracticeViewModel {
     ) {
         self.exerciseId = exerciseId
         let allWords = (content.exercise(id: exerciseId)?.items ?? []).map(WordPracticeItem.init)
+        // 5 random words, then shortest first, so each practice moves from easy to harder.
         self.items = Array(allWords.shuffled().prefix(Self.wordsPerSession))
+            .sorted { $0.word.count < $1.word.count }
         self.recording = recording
         self.speech = speech
         self.voice = voice
@@ -159,18 +166,40 @@ final class WordsPracticeViewModel {
                 return
             }
             phase = .recording
+            lastLiveText = ""
+            speech.startListening(expecting: acceptedAnswers) { [weak self] text in
+                self?.heardWhileRecording(text)
+            }
 
             try? await Task.sleep(for: .seconds(Self.maxRecordingSeconds))
             if !Task.isCancelled { await finishRecording() }
         }
     }
 
+    /// Live captions: each time new words arrive, restart a 1-second timer. When the
+    /// child has stopped talking for 1 second, recording stops by itself.
+    private func heardWhileRecording(_ text: String) {
+        guard phase == .recording, !PronunciationScorer.normalized(text).isEmpty else { return }
+        lastLiveText = text
+        silenceTask?.cancel()
+        silenceTask = Task {
+            try? await Task.sleep(for: Self.stopAfterSpeech)
+            guard !Task.isCancelled, phase == .recording else { return }
+            didTapStop()
+        }
+    }
+
     func didTapStop() {
+        silenceTask?.cancel()
+        silenceTask = nil
         task?.cancel()
         task = Task { await finishRecording() }
     }
 
     private func finishRecording() async {
+        speech.stopListening()
+        silenceTask?.cancel()
+        silenceTask = nil
         guard phase == .recording else { return }
         let result = recording.stopRecording()
         lastRecording = result
@@ -182,12 +211,21 @@ final class WordsPracticeViewModel {
 
         phase = .checking
         heardText = await speech.transcribe(result, expecting: acceptedAnswers)
+        if PronunciationScorer.normalized(heardText).isEmpty { heardText = lastLiveText }
         guard !PronunciationScorer.normalized(heardText).isEmpty else {
             phase = .notUnderstood
             return
         }
 
-        let verdict = PronunciationScorer.judge(heard: heardText, accepted: acceptedAnswers)
+        var verdict = PronunciationScorer.judge(heard: heardText, accepted: acceptedAnswers)
+        // The live captions sometimes catch a short word the file check misses: keep the better one.
+        if verdict != .correct, !lastLiveText.isEmpty {
+            let liveVerdict = PronunciationScorer.judge(heard: lastLiveText, accepted: acceptedAnswers)
+            if liveVerdict == .correct || (liveVerdict == .close && verdict == .incorrect) {
+                verdict = liveVerdict
+                heardText = lastLiveText
+            }
+        }
         if verdict == .correct { markCurrentWordCorrect() }
         phase = .result(verdict)
     }
@@ -207,8 +245,8 @@ final class WordsPracticeViewModel {
         playGuidedHelp()
     }
 
-    /// Says the word part by part ("s" … "un") while highlighting each chip,
-    /// then the whole word, slowly.
+    /// Says the word syllable by syllable ("ap" … "pull") while highlighting each chip,
+    /// then the whole word, slowly. A one-syllable word ("dog") is said once, whole.
     func playGuidedHelp() {
         task?.cancel()
         voice.stop()
@@ -223,7 +261,8 @@ final class WordsPracticeViewModel {
             }
             highlightedSoundIndex = nil
             guard !Task.isCancelled else { return }
-            await voice.speak(word, slowly: true)
+            // A one-syllable word was already said whole; longer words are joined back up.
+            if wordParts.count > 1 { await voice.speak(word, slowly: true) }
             if phase == .guidedHelp { phase = .help }
         }
     }
@@ -241,13 +280,11 @@ final class WordsPracticeViewModel {
         }
     }
 
-    /// Says one part as it sounds, using its IPA when the content provides one.
+    /// Says one part as a normal, smooth syllable. The content spells each part the way
+    /// it sounds ("wah", "ter"), so the voice reads it like a word instead of stitching
+    /// phonetic symbols together (which made it break up).
     private func say(_ part: WordPart) async {
-        if let ipa = part.ipa {
-            await voice.speakSound(part.chip.lowercased(), ipa: ipa)
-        } else {
-            await voice.speak(part.chip.lowercased(), slowly: true)
-        }
+        await voice.speak(part.sound ?? part.chip.lowercased(), slowly: true)
     }
 
     func didTapTryAgain() {
@@ -294,6 +331,9 @@ final class WordsPracticeViewModel {
     /// including after "Leave" on the shared overlay.
     func stopAll() {
         task?.cancel()
+        silenceTask?.cancel()
+        silenceTask = nil
+        speech.stopListening()
         voice.stop()
         if recording.isRecording { _ = recording.stopRecording() }
     }

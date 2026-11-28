@@ -17,16 +17,17 @@ struct BeforeYouStartView: View {
                 titleBlock
                 metaPills
                 howToPlay
-                grownUpTip
-                actions
+                startButton
             }
+            // Keep the content (and so the scroll view and its background) full screen
+            // width; only the card and button inside are narrower.
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, EchoSpacing.screenHorizontal)
             .padding(.top, EchoSpacing.s)
             .padding(.bottom, 40)
         }
         .echoScreenBackground()
         .navigationBarTitleDisplayMode(.inline)
-        .onDisappear { vm.stopExample() }
     }
 
     // MARK: - Sections
@@ -53,7 +54,7 @@ struct BeforeYouStartView: View {
         .multilineTextAlignment(.center)
     }
 
-    /// "5 min", "10 sounds", "Headphones on" as light blue capsules.
+    /// "3 min" and "5 sounds" as light blue capsules.
     private var metaPills: some View {
         HStack(spacing: 6) {
             ForEach(vm.metaPills, id: \.self) { text in
@@ -78,39 +79,14 @@ struct BeforeYouStartView: View {
             }
         }
         .padding(EchoSpacing.l)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        // Same width as the Start button; the height follows the steps.
+        .frame(maxWidth: EchoSize.buttonWidth, alignment: .leading)
         .echoCard(cornerRadius: EchoRadius.cardLarge)
     }
 
-    private var grownUpTip: some View {
-        VStack(alignment: .leading, spacing: EchoSpacing.xxs) {
-            Text("TIP FOR GROWN-UPS")
-                .echoFont(.caption, .semibold)
-                .foregroundStyle(EchoColor.tipLabel)
-            Text(vm.tip)
-                .echoFont(.supporting)
-                .foregroundStyle(EchoColor.textPrimary)
-        }
-        .padding(.vertical, EchoSpacing.m)
-        .padding(.horizontal, 14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(EchoColor.tipSurface, in: .rect(cornerRadius: 18))
-        .accessibilityElement(children: .combine)
-    }
-
-    private var actions: some View {
-        VStack(spacing: EchoSpacing.m) {
-            Button("Start", action: vm.start)
-                .buttonStyle(.echoPrimary)
-
-            if vm.canPlayExample {
-                Button(vm.isPlayingExample ? "Playing example…" : "Hear an example first") {
-                    Task { await vm.playExample() }
-                }
-                .buttonStyle(.echoSecondary)
-                .disabled(vm.isPlayingExample)
-            }
-        }
+    private var startButton: some View {
+        Button("Start", action: vm.start)
+            .buttonStyle(.echoPrimary)
     }
 }
 

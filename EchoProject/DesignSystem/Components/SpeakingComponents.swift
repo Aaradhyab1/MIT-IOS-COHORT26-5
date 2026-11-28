@@ -181,7 +181,7 @@ struct SpeakingSecondaryButtonStyle: ButtonStyle {
         configuration.label
             .echoFont(.body, .semibold)
             .foregroundStyle(EchoColor.textPrimary)
-            .frame(maxWidth: .infinity, minHeight: 50)
+            .frame(maxWidth: EchoSize.buttonWidth, minHeight: 50)
             .contentShape(Capsule())
             .glassEffect(.regular.interactive(), in: .capsule)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
